@@ -1,0 +1,216 @@
+"use client"
+
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Card } from "@/components/ui/card"
+
+interface AccessData {
+  codigoModular: string
+  dre: string
+  ugel: string
+  institution: string
+  level: string
+}
+
+export default function SurveyForm() {
+  const router = useRouter()
+  const [accessData, setAccessData] = useState<AccessData | null>(null)
+  const [formData, setFormData] = useState({
+    dre: "",
+    ugel: "",
+    institution: "",
+    level: "",
+    grade: "",
+    section: "",
+    sex: "",
+  })
+
+  useEffect(() => {
+    const data = sessionStorage.getItem("accessData")
+    if (!data) {
+      router.push("/acceso")
+      return
+    }
+
+    const parsed = JSON.parse(data) as AccessData
+    setAccessData(parsed)
+    setFormData((prev) => ({
+      ...prev,
+      dre: parsed.dre,
+      ugel: parsed.ugel,
+      institution: parsed.institution,
+      level: parsed.level,
+    }))
+  }, [router])
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target
+    if (["dre", "ugel", "institution", "level"].includes(name)) {
+      return
+    }
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log("Form submitted:", formData)
+    router.push("/encuesta")
+  }
+
+  if (!accessData) {
+    return (
+      <Card className="w-full max-w-2xl bg-white shadow-lg">
+        <div className="p-8 text-center">
+          <p className="text-gray-600">Cargando...</p>
+        </div>
+      </Card>
+    )
+  }
+
+  return (
+    <Card className="w-full max-w-2xl bg-white shadow-lg">
+      <div className="p-8">
+        <div className="flex justify-center mb-8">
+          <img src="/logo-minedu.png" alt="Ministerio de Educación" className="h-16 object-contain" />
+        </div>
+
+        {/* Title */}
+        <h2 className="text-2xl font-bold text-blue-900 text-center mb-2">Identificación para la Encuesta</h2>
+
+        {/* Subtitle */}
+        <p className="text-center text-sm text-gray-600 mb-8">
+          Por favor, completa los siguientes datos para continuar. Tu identidad{" "}
+          <span className="text-amber-600 font-semibold">permanecerá anónima</span>.
+        </p>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* DRE - DISABLED */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-800 mb-2">
+              Dirección Regional de Educación (DRE)
+            </label>
+            <select
+              name="dre"
+              value={formData.dre}
+              onChange={handleChange}
+              disabled
+              className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 focus:outline-none cursor-not-allowed"
+            >
+              <option value={formData.dre}>{formData.dre}</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Este campo se completa automáticamente</p>
+          </div>
+
+          {/* UGEL - DISABLED */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-800 mb-2">UGEL</label>
+            <select
+              name="ugel"
+              value={formData.ugel}
+              onChange={handleChange}
+              disabled
+              className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 focus:outline-none cursor-not-allowed"
+            >
+              <option value={formData.ugel}>{formData.ugel}</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Este campo se completa automáticamente</p>
+          </div>
+
+          {/* Institution - DISABLED */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-800 mb-2">Institución Educativa</label>
+            <select
+              name="institution"
+              value={formData.institution}
+              onChange={handleChange}
+              disabled
+              className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 focus:outline-none cursor-not-allowed"
+            >
+              <option value={formData.institution}>{formData.institution}</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Este campo se completa automáticamente</p>
+          </div>
+
+          {/* Level and Grade */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">Nivel</label>
+              <select
+                name="level"
+                value={formData.level}
+                onChange={handleChange}
+                disabled
+                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 focus:outline-none cursor-not-allowed"
+              >
+                <option value={formData.level}>{formData.level}</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">Este campo se completa automáticamente</p>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">Grado</label>
+              <select
+                name="grade"
+                value={formData.grade}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-900"
+              >
+                <option value="">-- Seleccione --</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Section and Sex */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">Sección</label>
+              <select
+                name="section"
+                value={formData.section}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-900"
+              >
+                <option value="">-- Seleccione --</option>
+                <option value="a">A</option>
+                <option value="b">B</option>
+                <option value="c">C</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">Sexo</label>
+              <select
+                name="sex"
+                value={formData.sex}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-900"
+              >
+                <option value="">-- Seleccione --</option>
+                <option value="masculino">Masculino</option>
+                <option value="femenino">Femenino</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-md transition-colors duration-200"
+          >
+            Continuar
+          </button>
+        </form>
+      </div>
+    </Card>
+  )
+}
