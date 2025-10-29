@@ -79,6 +79,21 @@ const handleSubmit = async (e: React.FormEvent) => {
       return
     }
 
+    // 🔹 Detectar tipo de encuesta según nivel
+    let surveyType: "primaria" | "secundaria" = "primaria"
+    if (formData.level.toLowerCase().includes("secundaria")) {
+      surveyType = "secundaria"
+    }
+
+    // 🔹 Guardar datos en sessionStorage para usar en SurveyPage
+    sessionStorage.setItem(
+      "surveyAccess",
+      JSON.stringify({
+        ...formData,
+        surveyType,
+      })
+    )
+
     console.log("Participación guardada:", data)
     router.push("/encuesta")
   } catch (error) {
