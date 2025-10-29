@@ -45,45 +45,38 @@ export default function AccesoPage() {
     },
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    // Validar que ambos campos estén completos
-    if (!codigoModular.trim() || !codigoAcceso.trim()) {
-      setError("Por favor, completa ambos campos")
-      setLoading(false)
-      return
+    try {
+      const res = await fetch("/api/validar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigoModular, codigoAcceso }),
+      });
+
+      const data = await res.json();
+      setLoading(false);
+
+      if (!res.ok) {
+        setError(data.error);
+        return;
+      }
+
+      // Guardar los datos en sessionStorage
+      sessionStorage.setItem("accessData", JSON.stringify(data.schools));
+
+      // Redirigir
+      router.push("/identificacion");
+    } catch (err) {
+      console.error(err);
+      setError("Ocurrió un error al validar los datos");
+      setLoading(false);
     }
+  };
 
-    // Validar que el código modular exista
-    if (!institutionData[codigoModular]) {
-      setError("Código modular no válido")
-      setLoading(false)
-      return
-    }
-
-    // Validar código de acceso (en este ejemplo, debe ser "1234")
-    if (codigoAcceso !== "1234") {
-      setError("Código de acceso incorrecto")
-      setLoading(false)
-      return
-    }
-
-    // Guardar datos en sessionStorage
-    const data = institutionData[codigoModular]
-    sessionStorage.setItem(
-      "accessData",
-      JSON.stringify({
-        codigoModular,
-        ...data,
-      }),
-    )
-
-    // Redirigir a identificación
-    router.push("/identificacion")
-  }
 
   return (
     <main className="min-h-screen bg-gray-100">
