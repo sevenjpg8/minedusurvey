@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   try {
     const { codigoModular, codigoAcceso } = await req.json();
 
-    // Validar campos
+    // 🔹 Validar campos
     if (!codigoModular?.trim() || !codigoAcceso?.trim()) {
       return NextResponse.json(
         { error: "Por favor, completa ambos campos" },
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Buscar el registro en la tabla `codigo_modular`
+    // 🔹 Buscar el registro en la tabla `codigo_modular`
     const { data: modularData, error: modularError } = await supabase
       .from("codigo_modular")
       .select("codigo, token, school_id")
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verificar el código de acceso
+    // 🔹 Verificar el código de acceso extraído del token
     const accesoCalculado = extraerCodigoAcceso(modularData.token);
     if (accesoCalculado !== codigoAcceso) {
       return NextResponse.json(
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Buscar los datos del colegio relacionado (tabla schools)
+    // 🔹 Buscar los datos del colegio (schools)
     const { data: schoolData, error: schoolError } = await supabase
       .from("schools")
       .select("id, name, departamento, nivel_educativo, ugel_id")
@@ -70,19 +70,23 @@ export async function POST(req: Request) {
       );
     }
 
-    // Obtener el nombre de la UGEL (si está en otra tabla)
-    const { data: ugelData } = await supabase
-      .from("ugeles")
+    // 🔹 Obtener el nombre de la UGEL real desde la tabla `ugels`
+    const { data: ugelData, error: ugelError } = await supabase
+      .from("ugels")
       .select("name")
       .eq("id", schoolData.ugel_id)
       .single();
 
-    // Construir la respuesta completa
+    if (ugelError) {
+      console.error("Error al obtener UGEL:", ugelError);
+    }
+
+    // 🔹 Construir respuesta final
     return NextResponse.json({
       success: true,
       schools: {
-        codigo: modularData.codigo,
-        dre: schoolData.departamento,
+        codigoModular: modularData.codigo,
+        dre: schoolData.departamento, // o el campo de DRE si lo tienes aparte
         ugel: ugelData?.name ?? "SIN UGEL",
         institution: schoolData.name,
         level: schoolData.nivel_educativo,
