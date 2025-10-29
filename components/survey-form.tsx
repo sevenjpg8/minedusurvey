@@ -56,11 +56,37 @@ export default function SurveyForm() {
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Form submitted:", formData)
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+
+  try {
+    const res = await fetch("/api/participacion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        schoolId: accessData?.codigoModular, // 👈 O school_id si lo guardas en session
+        level: formData.level,
+        grade: formData.grade,
+        section: formData.section,
+        gender: formData.sex,
+      }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      console.error(data.error)
+      alert(data.error)
+      return
+    }
+
+    console.log("Participación guardada:", data)
     router.push("/encuesta")
+  } catch (error) {
+    console.error("Error al enviar datos:", error)
+    alert("Error al guardar la participación")
   }
+}
+
 
   if (!accessData) {
     return (
@@ -161,12 +187,13 @@ export default function SurveyForm() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-900"
               >
                 <option value="">-- Seleccione --</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="E">E</option>
+                <option value="F">F</option>
+                <option value="G">G</option>
               </select>
             </div>
           </div>
