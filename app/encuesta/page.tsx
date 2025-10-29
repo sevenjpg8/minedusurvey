@@ -1,7 +1,9 @@
 "use client"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabaseClient" // tu cliente Supabase
 import Header from "@/components/header"
+import { getQuestions, Question as QuestionType } from "@/lib/getQuestions"
 
 interface Question {
   id: number
@@ -11,48 +13,33 @@ interface Question {
 
 export default function SurveyPage() {
   const router = useRouter()
-  const [questions, setQuestions] = useState<Question[]>([])
+  const [questions, setQuestions] = useState<QuestionType[]>([])
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [answers, setAnswers] = useState<(number | null)[]>([])
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [timeLeft, setTimeLeft] = useState(300)
 
-  // Cargar preguntas según surveyType
   useEffect(() => {
-    const stored = sessionStorage.getItem("surveyAccess")
-    if (!stored) {
-      router.push("/acceso")
-      return
+  const access = sessionStorage.getItem("surveyAccess")
+  if (!access) return
+
+  const { surveyId } = JSON.parse(access)
+
+  const loadQuestions = async () => {
+    try {
+      const data = await getQuestions(surveyId)
+      setQuestions(data)
+    } catch (error) {
+      console.error("Error cargando preguntas", error)
     }
+  }
 
-    const { surveyType } = JSON.parse(stored)
-
-    // 🔹 Aquí puedes reemplazar con fetch a tu API si usas Supabase o backend
-    async function loadQuestions() {
-      try {
-        const res = await fetch(`/api/questions?survey=${surveyType}`)
-        const data = await res.json()
-        if (data.questions && data.questions.length > 0) {
-          setQuestions(data.questions)
-          setAnswers(new Array(data.questions.length).fill(null))
-        } else {
-          alert("No hay preguntas disponibles para esta encuesta")
-          router.push("/acceso")
-        }
-      } catch (error) {
-        console.error("Error cargando preguntas:", error)
-        alert("Error cargando preguntas")
-      }
-    }
-
-    loadQuestions()
-  }, [router])
+  loadQuestions()
+}, [router])
 
   // Timer
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0))
-    }, 1000)
+    const timer = setInterval(() => setTimeLeft(prev => (prev > 0 ? prev - 1 : 0)), 1000)
     return () => clearInterval(timer)
   }, [])
 
@@ -91,18 +78,16 @@ export default function SurveyPage() {
   }
 
   const handleSubmit = async () => {
-    // Aquí guardas las respuestas en tu backend
     try {
       const stored = sessionStorage.getItem("surveyAccess")
       if (!stored) return
       const { schoolId, surveyType } = JSON.parse(stored)
 
-      const res = await fetch("/api/survey/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ schoolId, surveyType, answers }),
-      })
-      if (!res.ok) throw new Error("Error enviando encuesta")
+      const { data, error } = await supabase
+        .from("survey_responses")
+        .insert([{ school_id: schoolId, level: surveyType, answers }])
+
+      if (error) throw error
 
       router.push("/gracias")
     } catch (error) {

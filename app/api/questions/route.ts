@@ -1,39 +1,35 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
-import type { NextApiRequest, NextApiResponse } from "next"
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    // Obtenemos el parámetro "survey" de la URL
+    const { searchParams } = new URL(req.url);
+    const survey = searchParams.get("survey");
+
+    if (!survey) {
+      return NextResponse.json({ error: "No se indicó el tipo de encuesta" }, { status: 400 });
+    }
+
+    // Consultamos la tabla questions según el tipo de encuesta
     const { data, error } = await supabase
       .from("questions")
-      .select("id, text, options") // asumiendo que options es un array JSON
+      .select("id, text, options")
+      .eq("level", survey) // Asegúrate de que tu tabla tenga columna "level": "primaria" o "secundaria"
       .order("id", { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching questions:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    if (!data || data.length === 0) {
+      return NextResponse.json({ error: "No hay preguntas disponibles" }, { status: 404 });
+    }
 
     return NextResponse.json({ questions: data });
   } catch (err) {
-    console.error("Error fetching questions:", err);
-    return NextResponse.json({ error: "Error fetching questions" }, { status: 500 });
+    console.error("Unexpected error:", err);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
-
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { survey } = req.query
-
-  const PRIMARY_QUESTIONS = [
-    { id: 1, text: "¿Te sientes seguro en tu colegio?", options: ["Totalmente en desacuerdo", "En desacuerdo", "De acuerdo", "Totalmente de acuerdo"] },
-    { id: 2, text: "¿Tus profesores te apoyan?", options: ["Nunca", "A veces", "Casi siempre", "Siempre"] },
-  ]
-
-  const SECONDARY_QUESTIONS = [
-    { id: 1, text: "¿Participas en actividades extracurriculares?", options: ["Nunca", "A veces", "Casi siempre", "Siempre"] },
-    { id: 2, text: "¿Tus compañeros respetan tus opiniones?", options: ["Nunca", "A veces", "Casi siempre", "Siempre"] },
-  ]
-
-  if (survey === "primaria") return res.status(200).json({ questions: PRIMARY_QUESTIONS })
-  if (survey === "secundaria") return res.status(200).json({ questions: SECONDARY_QUESTIONS })
-
-  return res.status(404).json({ error: "Encuesta no encontrada" })
-}
-

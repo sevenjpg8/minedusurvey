@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 
+
 interface AccessData {
   codigoModular: string
   dre: string
@@ -64,7 +65,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        schoolId: accessData?.codigoModular, // 👈 O school_id si lo guardas en session
+        schoolId: accessData?.codigoModular,
         level: formData.level,
         grade: formData.grade,
         section: formData.section,
@@ -79,18 +80,20 @@ const handleSubmit = async (e: React.FormEvent) => {
       return
     }
 
-    // 🔹 Detectar tipo de encuesta según nivel
-    let surveyType: "primaria" | "secundaria" = "primaria"
-    if (formData.level.toLowerCase().includes("secundaria")) {
-      surveyType = "secundaria"
+    // 🔹 Determinar el ID de encuesta según el nivel
+    let surveyId: number
+    if (formData.level.toLowerCase() === "primaria") {
+      surveyId = 1
+    } else {
+      surveyId = 2
     }
 
-    // 🔹 Guardar datos en sessionStorage para usar en SurveyPage
+    // 🔹 Guardar datos en sessionStorage para usarlos en /encuesta
     sessionStorage.setItem(
       "surveyAccess",
       JSON.stringify({
-        ...formData,
-        surveyType,
+        schoolId: accessData?.codigoModular,
+        surveyId,
       })
     )
 
@@ -101,7 +104,6 @@ const handleSubmit = async (e: React.FormEvent) => {
     alert("Error al guardar la participación")
   }
 }
-
 
   if (!accessData) {
     return (
