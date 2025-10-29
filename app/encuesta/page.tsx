@@ -3,41 +3,52 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Header from "@/components/header"
 
-const QUESTIONS = [
-  {
-    id: 1,
-    text: "En mi colegio los y las estudiantes nos llevamos bien",
-    options: ["Muy en desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"],
-  },
-  {
-    id: 2,
-    text: "Los profesores y profesoras me tratan con respeto",
-    options: ["Muy en desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"],
-  },
-  {
-    id: 3,
-    text: "Me siento seguro(a) en mi colegio",
-    options: ["Muy en desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"],
-  },
-  {
-    id: 4,
-    text: "Las clases son interesantes y me ayudan a aprender",
-    options: ["Muy en desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"],
-  },
-  {
-    id: 5,
-    text: "Tengo oportunidades para participar en actividades escolares",
-    options: ["Muy en desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"],
-  },
-]
+interface Question {
+  id: number
+  text: string
+  options: string[]
+}
 
 export default function SurveyPage() {
   const router = useRouter()
+  const [questions, setQuestions] = useState<Question[]>([])
   const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [answers, setAnswers] = useState<(number | null)[]>(new Array(QUESTIONS.length).fill(null))
-  const [timeLeft, setTimeLeft] = useState(300)
+  const [answers, setAnswers] = useState<(number | null)[]>([])
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
+  const [timeLeft, setTimeLeft] = useState(300)
 
+  // Cargar preguntas según surveyType
+  useEffect(() => {
+    const stored = sessionStorage.getItem("surveyAccess")
+    if (!stored) {
+      router.push("/acceso")
+      return
+    }
+
+    const { surveyType } = JSON.parse(stored)
+
+    // 🔹 Aquí puedes reemplazar con fetch a tu API si usas Supabase o backend
+    async function loadQuestions() {
+      try {
+        const res = await fetch(`/api/questions?survey=${surveyType}`)
+        const data = await res.json()
+        if (data.questions && data.questions.length > 0) {
+          setQuestions(data.questions)
+          setAnswers(new Array(data.questions.length).fill(null))
+        } else {
+          alert("No hay preguntas disponibles para esta encuesta")
+          router.push("/acceso")
+        }
+      } catch (error) {
+        console.error("Error cargando preguntas:", error)
+        alert("Error cargando preguntas")
+      }
+    }
+
+    loadQuestions()
+  }, [router])
+
+  // Timer
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0))
@@ -51,22 +62,22 @@ export default function SurveyPage() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
 
-  const handleSelectAnswer = (optionIndex: number) => {
-    setSelectedAnswer(optionIndex)
+  const handleSelectAnswer = (index: number) => {
+    setSelectedAnswer(index)
     const newAnswers = [...answers]
-    newAnswers[currentQuestion] = optionIndex
+    newAnswers[currentQuestion] = index
     setAnswers(newAnswers)
 
     setTimeout(() => {
-      if (currentQuestion < QUESTIONS.length - 1) {
+      if (currentQuestion < questions.length - 1) {
         setCurrentQuestion(currentQuestion + 1)
-        setSelectedAnswer(null)
+        setSelectedAnswer(answers[currentQuestion + 1])
       }
-    }, 500)
+    }, 300)
   }
 
   const handleNext = () => {
-    if (currentQuestion < QUESTIONS.length - 1) {
+    if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1)
       setSelectedAnswer(answers[currentQuestion + 1])
     }
@@ -79,14 +90,38 @@ export default function SurveyPage() {
     }
   }
 
-  const handleSubmit = () => {
-    console.log("Survey completed with answers:", answers)
-    router.push("/gracias")
+  const handleSubmit = async () => {
+    // Aquí guardas las respuestas en tu backend
+    try {
+      const stored = sessionStorage.getItem("surveyAccess")
+      if (!stored) return
+      const { schoolId, surveyType } = JSON.parse(stored)
+
+      const res = await fetch("/api/survey/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schoolId, surveyType, answers }),
+      })
+      if (!res.ok) throw new Error("Error enviando encuesta")
+
+      router.push("/gracias")
+    } catch (error) {
+      console.error(error)
+      alert("Error al enviar la encuesta")
+    }
   }
 
-  const question = QUESTIONS[currentQuestion]
+  if (!questions || questions.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Cargando preguntas...</p>
+      </div>
+    )
+  }
+
+  const question = questions[currentQuestion]
   const isAnswered = selectedAnswer !== null
-  const progressPercentage = ((currentQuestion + 1) / QUESTIONS.length) * 100
+  const progressPercentage = ((currentQuestion + 1) / questions.length) * 100
 
   return (
     <main className="min-h-screen bg-gray-100">
@@ -97,7 +132,7 @@ export default function SurveyPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-gray-700">
-                Pregunta {currentQuestion + 1} de {QUESTIONS.length}
+                Pregunta {currentQuestion + 1} de {questions.length}
               </span>
               <div className="w-3 h-3 bg-red-600 rounded-full"></div>
             </div>
@@ -112,27 +147,20 @@ export default function SurveyPage() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex items-center justify-center py-12 px-4">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
-          {/* Instructions (only on first question) */}
           {currentQuestion === 0 && (
             <div className="mb-8 pb-8 border-b border-gray-200">
               <p className="text-gray-700 text-sm leading-relaxed">
-                A continuación, vas a encontrar algunos enunciados acerca de tu colegio, tus compañeros(as) y
-                profesores(as). Lee cada enunciado con atención y marca con un aspa (X) en el cuadro correspondiente qué
-                tan de acuerdo o en desacuerdo te encuentras con cada enunciado según tu experiencia. Solo puedes marcar
-                una respuesta por enunciado.
+                Lee cada enunciado y marca con un aspa (X) la opción que refleje tu experiencia.
               </p>
             </div>
           )}
 
-          {/* Question */}
           <h2 className="text-2xl font-bold text-blue-900 mb-8">
             {currentQuestion + 1}. {question.text}
           </h2>
 
-          {/* Options */}
           <div className="grid grid-cols-2 gap-4 mb-8">
             {question.options.map((option, index) => (
               <button
@@ -149,7 +177,6 @@ export default function SurveyPage() {
             ))}
           </div>
 
-          {/* Navigation Buttons */}
           <div className="flex gap-4 justify-between">
             <button
               onClick={handlePrevious}
@@ -163,14 +190,12 @@ export default function SurveyPage() {
               Anterior
             </button>
 
-            {currentQuestion === QUESTIONS.length - 1 ? (
+            {currentQuestion === questions.length - 1 ? (
               <button
                 onClick={handleSubmit}
                 disabled={!isAnswered}
                 className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
-                  !isAnswered
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-red-600 text-white hover:bg-red-700"
+                  !isAnswered ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-red-600 text-white hover:bg-red-700"
                 }`}
               >
                 Enviar Encuesta
@@ -180,9 +205,7 @@ export default function SurveyPage() {
                 onClick={handleNext}
                 disabled={!isAnswered}
                 className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
-                  !isAnswered
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
+                  !isAnswered ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
               >
                 Siguiente
