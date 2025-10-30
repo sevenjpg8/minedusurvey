@@ -80,40 +80,57 @@ export default function SurveyPage() {
   const handleSubmit = async () => {
     try {
       const stored = sessionStorage.getItem("surveyAccess")
-      if (!stored) return
+      console.log("🟦 Revisando sessionStorage...")
+      if (!stored) {
+        console.warn("⚠️ No se encontró ningún valor en sessionStorage con la clave 'surveyAccess'")
+        alert("No se encontró información de acceso a la encuesta")
+        return
+      }
+      
+      let parsed
+      try {
+        parsed = JSON.parse(stored)
+      } catch (err) {
+        console.error("❌ Error parseando surveyAccess:", err, stored)
+        alert("Error leyendo la información de acceso")
+        return
+      }
+
+      console.log("✅ Datos recuperados de sessionStorage:", parsed)
+
       const { schoolId, surveyType, participationId } = JSON.parse(stored)
 
       if (!participationId) {
+        console.warn("⚠️ participationId faltante. Datos completos:", parsed)
         alert("No se encontró el ID de participación")
         return
       }
+
       const answersPayload = answers.map((selectedIndex, i) => {
-            const question = questions[i]
-            if (selectedIndex === null) return null // ignorar si no respondió
-
-            const optionText = question.options[selectedIndex]
-
-            return {
-              survey_participation_id: participationId,
-              question_id: question.id,
-              option_id: null, // si tienes un ID real de la opción en tu tabla, aquí se coloca
-              value: optionText,
-            }
-          }).filter(Boolean) // eliminar nulls
-
-          if (answersPayload.length === 0) {
-            alert("No hay respuestas para enviar")
-            return
+        const question = questions[i]
+        if (selectedIndex === null) return null // ignorar si no respondió
+          const optionText = question.options[selectedIndex]
+          return {
+            survey_participation_id: participationId,
+            question_id: question.id,
+            option_id: null, // si tienes un ID real de la opción en tu tabla, aquí se coloca
+            value: optionText,
           }
+        }).filter(Boolean) // eliminar nulls
 
-          const { data, error } = await supabase
-            .from("answers")
-            .insert(answersPayload)
+        if (answersPayload.length === 0) {
+          alert("No hay respuestas para enviar")
+          return
+        }
 
-          if (error) throw error
+        const { data, error } = await supabase
+          .from("answers")
+          .insert(answersPayload)
 
-          router.push("/gracias")
+        if (error) throw error
 
+        router.push("/gracias")
+        console.log("🎯 participationId detectado correctamente:", participationId)
     } catch (error) {
       console.error(error)
       alert("Error al enviar la encuesta")

@@ -13,21 +13,26 @@ export async function POST(req: Request) {
       )
     }
 
-    // Crear nueva participación
-    const { error } = await supabase.from("survey_participations").insert([
-      {
-        id: uuidv4(),
-        survey_id: 1, // ✅ Ajusta este valor según tu encuesta actual
-        school_id: schoolId,
-        education_level: level,
-        grade,
-        section,
-        gender,
-        started_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ])
+    // Generar ID manualmente
+    const newId = uuidv4()
+
+    // Insertar nueva participación
+    const { error } = await supabase
+      .from("survey_participations")
+      .insert([
+        {
+          id: newId,
+          survey_id: 1, // ⚙️ ajusta si es necesario
+          school_id: schoolId,
+          education_level: level,
+          grade,
+          section,
+          gender,
+          started_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ])
 
     if (error) {
       console.error("Error insertando en survey_participations:", error)
@@ -37,7 +42,8 @@ export async function POST(req: Request) {
       )
     }
 
-    return NextResponse.json({ success: true })
+    // ✅ Devolver el id que generamos manualmente
+    return NextResponse.json({ id: newId })
   } catch (err) {
     console.error("Error en /api/participacion:", err)
     return NextResponse.json(
