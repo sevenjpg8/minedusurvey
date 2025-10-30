@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
+import { Alert, AlertDescription } from "./ui/alert"
 
 
 interface AccessData {
@@ -27,6 +28,7 @@ export default function SurveyForm() {
     section: "",
     sex: "",
   })
+  const [error, setError] = useState("")
 
   useEffect(() => {
     const data = sessionStorage.getItem("accessData")
@@ -59,6 +61,20 @@ export default function SurveyForm() {
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault()
+
+  // 🔹 Validaciones de campos requeridos
+    if (!formData.grade) {
+      setError("Por favor, selecciona un grado")
+      return
+    }
+    if (!formData.section) {
+      setError("Por favor, selecciona una sección")
+      return
+    }
+    if (!formData.sex) {
+      setError("Por favor, selecciona tu sexo")
+      return
+    }
 
   try {
     const res = await fetch("/api/participacion", {
@@ -133,6 +149,12 @@ const handleSubmit = async (e: React.FormEvent) => {
           <span className="text-amber-600 font-semibold">permanecerá anónima</span>.
         </p>
 
+        {/* ⚠️ Mensaje de error visual */}
+        {error && (
+          <Alert className="mb-6 border-red-200 bg-red-50">
+            <AlertDescription className="text-red-800">{error}</AlertDescription>
+          </Alert>
+        )}
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* DRE - DISABLED */}

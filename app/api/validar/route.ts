@@ -11,7 +11,7 @@ function extraerCodigoAcceso(token: string): string {
   return parte;
 }
 
-export async function POST(req: Request) {
+export async function POST(req: Request) {  
   try {
     const { codigoModular, codigoAcceso } = await req.json();
 
