@@ -24,12 +24,12 @@ export default function Footer() {
             <h3 className="text-white font-bold mb-4">ENLACES DE INTERÉS</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                <a href="https://www.gob.pe/minedu" className="text-gray-300 hover:text-white transition-colors" target="_blank">
                   Portal MINEDU
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                <a href="https://www.gob.pe/peru/transparencia" className="text-gray-300 hover:text-white transition-colors" target="_blank">
                   Portal de Transparencia
                 </a>
               </li>
