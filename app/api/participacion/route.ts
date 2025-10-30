@@ -16,13 +16,28 @@ export async function POST(req: Request) {
     // Generar ID manualmente
     const newId = uuidv4()
 
+    let surveyId: number
+    const nivel = level.trim().toLowerCase()
+
+    if (nivel.includes("primaria")) {
+      surveyId = 1
+    } else if (nivel.includes("secundaria")) {
+      surveyId = 2
+    } else {
+      // En caso de que no coincida con ninguno
+      return NextResponse.json(
+        { error: "Nivel educativo no reconocido" },
+        { status: 400 }
+      )
+    }
+
     // Insertar nueva participación
     const { error } = await supabase
       .from("survey_participations")
       .insert([
         {
           id: newId,
-          survey_id: 1, // ⚙️ ajusta si es necesario
+          survey_id: surveyId, // ⚙️ ajusta si es necesario
           school_id: schoolId,
           education_level: level,
           grade,
