@@ -3,6 +3,11 @@ export interface Question {
   id: number
   text: string
   options: string[]
+  type?: string
+  survey_id?: number
+  dimension_id?: number
+  order?: number
+  prefix?: string | null
 }
 
 // Función para traer opciones según question_id
@@ -33,7 +38,7 @@ export async function getQuestions(surveyId: number): Promise<Question[]> {
   try {
     // 1️⃣ Traer preguntas según surveyId
     const questionsRes = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}rest/v1/questions?select=id,text&survey_id=eq.${surveyId}&order=id.asc`,
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}rest/v1/questions?select=id,text,type,prefix,order&survey_id=eq.${surveyId}&order=id.asc`,
       {
         headers: {
           apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -61,6 +66,9 @@ export async function getQuestions(surveyId: number): Promise<Question[]> {
       return {
         id: q.id,
         text: q.text,
+        type: q.type,
+        order: q.order,
+        prefix: q.prefix,
         // Si no hay opciones, fallback a valores por defecto
         options: opts.length > 0 ? opts : ["Totalmente de acuerdo", "De acuerdo", "En desacuerdo", "Totalmente en desacuerdo"],
       }

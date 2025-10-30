@@ -9,7 +9,13 @@ interface Question {
   id: number
   text: string
   options: string[]
+  prefix?: string | null
+  type?: string
+  survey_id?: number
+  dimension_id?: number
+  order?: number
 }
+
 
 export default function SurveyPage() {
   const router = useRouter()
@@ -175,10 +181,10 @@ export default function SurveyPage() {
 
       <div className="flex items-center justify-center py-12 px-4">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
-          {currentQuestion === 0 && (
+          {question.prefix && (
             <div className="mb-8 pb-8 border-b border-gray-200">
-              <p className="text-gray-700 text-sm leading-relaxed">
-                Lee cada enunciado y marca con un aspa (X) la opción que refleje tu experiencia.
+              <p className="text-gray-700 text-sm font-medium text-gray-600">
+                {question.prefix}
               </p>
             </div>
           )}
