@@ -33,15 +33,15 @@ export async function POST(req: Request) {
 
     // 🔹 Buscar el registro en la tabla `codigo_modular`
     const { data: modularData, error: modularError } = await supabase
-      .from("codigo_modular")
+      .from("codigo_modular_new_prueba")
       .select("codigo, token, school_id")
       .eq("codigo", codigoNum)
       .single();
 
     if (modularError || !modularData) {
-      console.error("Supabase error:", modularError);
+      console.error("No se encontró el código modular:", modularError);
       return NextResponse.json(
-        { error: "Código modular no válido" },
+        { error: "codigo_modular_invalido" },
         { status: 400 }
       );
     }
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     const accesoCalculado = extraerCodigoAcceso(modularData.token);
     if (accesoCalculado !== codigoAcceso) {
       return NextResponse.json(
-        { error: "Código de acceso incorrecto" },
+        { error: "codigo_acceso_invalido" },
         { status: 400 }
       );
     }
@@ -69,6 +69,7 @@ export async function POST(req: Request) {
         { status: 404 }
       );
     }
+
 
     // 🔹 Obtener el nombre de la UGEL real desde la tabla `ugels`
     const { data: ugelData, error: ugelError } = await supabase

@@ -13,12 +13,36 @@ export default function AccesoPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
+  const handleCodigoModularChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    // Solo números
+    if (/^\d*$/.test(value)) {
+      // Máximo 7 caracteres
+      if (value.length <= 7) {
+        setCodigoModular(value)
+      }
+    }
+  }
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    setLoading(true)
+    
+    //Validación local del código modular
+    if (codigoModular.length !== 7) {
+      setError("El código modular necesita 7 caracteres")
+      return
+    }
+
+    //Validación local del código de acceso
+    if (!codigoAcceso) {
+      setError("Debes ingresar tu código de acceso")
+      return
+    }
 
     try {
+      setLoading(true)
       const response = await fetch("/api/validar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -28,8 +52,14 @@ export default function AccesoPage() {
       const result = await response.json()
       setLoading(false)
 
-      if (!response.ok || !result.success) {
-        setError(result.error || "Código modular o código de acceso incorrecto")
+      if (!response.ok) {
+        if (result.error === "codigo_modular_invalido") {
+          setError("El código modular es incorrecto")
+        } else if (result.error === "codigo_acceso_invalido") {
+          setError("El código de acceso es incorrecto")
+        } else {
+          setError("Ocurrió un error al verificar el acceso")
+        }
         return
       }
 
@@ -87,8 +117,9 @@ export default function AccesoPage() {
                 <input
                   type="text"
                   value={codigoModular}
-                  onChange={(e) => setCodigoModular(e.target.value)}
+                  onChange={handleCodigoModularChange}
                   placeholder="Ingresa el código modular"
+                  maxLength={7}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-900"
                 />
               </div>
@@ -99,7 +130,7 @@ export default function AccesoPage() {
                   Código de Acceso
                 </label>
                 <input
-                  type="password"
+                  type="text"
                   value={codigoAcceso}
                   onChange={(e) => setCodigoAcceso(e.target.value)}
                   placeholder="Ingresa tu código de acceso"
