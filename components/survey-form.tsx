@@ -94,8 +94,10 @@ const handleSubmit = async (e: React.FormEvent) => {
       JSON.stringify({
         schoolId: accessData?.codigoModular,
         surveyId,
+        participationId: data.id // <-- Aquí es donde va
       })
     )
+
 
     console.log("Participación guardada:", data)
     router.push("/encuesta")

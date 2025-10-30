@@ -81,15 +81,39 @@ export default function SurveyPage() {
     try {
       const stored = sessionStorage.getItem("surveyAccess")
       if (!stored) return
-      const { schoolId, surveyType } = JSON.parse(stored)
+      const { schoolId, surveyType, participationId } = JSON.parse(stored)
 
-      const { data, error } = await supabase
-        .from("survey_responses")
-        .insert([{ school_id: schoolId, level: surveyType, answers }])
+      if (!participationId) {
+        alert("No se encontró el ID de participación")
+        return
+      }
+      const answersPayload = answers.map((selectedIndex, i) => {
+            const question = questions[i]
+            if (selectedIndex === null) return null // ignorar si no respondió
 
-      if (error) throw error
+            const optionText = question.options[selectedIndex]
 
-      router.push("/gracias")
+            return {
+              survey_participation_id: participationId,
+              question_id: question.id,
+              option_id: null, // si tienes un ID real de la opción en tu tabla, aquí se coloca
+              value: optionText,
+            }
+          }).filter(Boolean) // eliminar nulls
+
+          if (answersPayload.length === 0) {
+            alert("No hay respuestas para enviar")
+            return
+          }
+
+          const { data, error } = await supabase
+            .from("answers")
+            .insert(answersPayload)
+
+          if (error) throw error
+
+          router.push("/gracias")
+
     } catch (error) {
       console.error(error)
       alert("Error al enviar la encuesta")
