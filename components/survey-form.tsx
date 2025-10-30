@@ -133,6 +133,12 @@ const handleSubmit = async (e: React.FormEvent) => {
     )
   }
 
+  // 🔹 Determinar los grados disponibles según el nivel
+  const gradeOptions =
+    formData.level.toLowerCase() === "primaria"
+      ? ["1", "2", "3", "4", "5", "6"]
+      : ["1", "2", "3", "4", "5"]
+
   return (
     <Card className="w-full max-w-2xl bg-white shadow-lg">
       <div className="p-8">
@@ -228,12 +234,11 @@ const handleSubmit = async (e: React.FormEvent) => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-900"
               >
                 <option value="">-- Seleccione --</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
+                {gradeOptions.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -252,6 +257,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <option value="a">A</option>
                 <option value="b">B</option>
                 <option value="c">C</option>
+                <option value="a">D</option>
+                <option value="c">E</option>
+                <option value="b">F</option>
+                <option value="c">G</option>
               </select>
             </div>
             <div>

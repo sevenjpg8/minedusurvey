@@ -168,7 +168,7 @@ export default function SurveyPage() {
               </span>
               <div className="w-3 h-3 bg-red-600 rounded-full"></div>
             </div>
-            <span className="text-lg font-semibold text-gray-700">{formatTime(timeLeft)}</span>
+            {/* <span className="text-lg font-semibold text-gray-700">{formatTime(timeLeft)}</span> */}
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
             <div
