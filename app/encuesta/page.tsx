@@ -60,25 +60,26 @@ export default function SurveyPage() {
     newAnswers[currentQuestion] = index
     setAnswers(newAnswers)
 
-    setTimeout(() => {
-      if (currentQuestion < questions.length - 1) {
-        setCurrentQuestion(currentQuestion + 1)
-        setSelectedAnswer(answers[currentQuestion + 1])
-      }
-    }, 300)
+    // setTimeout(() => {
+    //   if (currentQuestion < questions.length - 1) {
+    //     setCurrentQuestion(currentQuestion + 1)
+    //     setSelectedAnswer(answers[currentQuestion + 1])
+    //   }
+    // }, 300)
   }
 
   const handleNext = () => {
     if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1)
-      setSelectedAnswer(answers[currentQuestion + 1])
+      const nextIndex = currentQuestion + 1
+      setCurrentQuestion(nextIndex)
+      setSelectedAnswer(answers[nextIndex] ?? null)
     }
   }
 
   const handlePrevious = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1)
-      setSelectedAnswer(answers[currentQuestion - 1])
+      setSelectedAnswer(answers[currentQuestion - 1] ?? null) 
     }
   }
 
@@ -183,7 +184,7 @@ export default function SurveyPage() {
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
           {question.prefix && (
             <div className="mb-8 pb-8 border-b border-gray-200">
-              <p className="text-gray-700 text-sm font-medium text-gray-600">
+              <p className="text-gray-700 text-sm font-medium">
                 {question.prefix}
               </p>
             </div>
@@ -200,8 +201,8 @@ export default function SurveyPage() {
                 onClick={() => handleSelectAnswer(index)}
                 className={`p-4 rounded-lg font-semibold transition-all ${
                   selectedAnswer === index
-                    ? "bg-blue-900 text-white shadow-md scale-105"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-blue-900 text-white shadow-md scale-105 cursor-pointer"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
                 }`}
               >
                 {option.text}
@@ -216,7 +217,7 @@ export default function SurveyPage() {
               className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
                 currentQuestion === 0
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-gray-400 text-white hover:bg-gray-500"
+                  : "bg-gray-400 text-white hover:bg-gray-500 cursor-pointer"
               }`}
             >
               Anterior
@@ -227,7 +228,7 @@ export default function SurveyPage() {
                 onClick={handleSubmit}
                 disabled={!isAnswered}
                 className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
-                  !isAnswered ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-red-600 text-white hover:bg-red-700"
+                  !isAnswered ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-red-600 text-white hover:bg-red-700 cursor-pointer"
                 }`}
               >
                 Enviar Encuesta
@@ -237,7 +238,7 @@ export default function SurveyPage() {
                 onClick={handleNext}
                 disabled={!isAnswered}
                 className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
-                  !isAnswered ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"
+                  !isAnswered ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
                 }`}
               >
                 Siguiente

@@ -142,7 +142,7 @@ export default function AccesoPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-md transition-colors duration-200"
+                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-md transition-colors duration-200 cursor-pointer"
               >
                 {loading ? "Validando..." : "Acceder"}
               </button>
