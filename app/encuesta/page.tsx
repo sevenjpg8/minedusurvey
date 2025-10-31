@@ -87,8 +87,8 @@ export default function SurveyPage() {
       const stored = sessionStorage.getItem("surveyAccess")
       console.log("🟦 Revisando sessionStorage...")
       if (!stored) {
-        console.warn("⚠️ No se encontró ningún valor en sessionStorage con la clave 'surveyAccess'")
-        alert("No se encontró información de acceso a la encuesta")
+        //console.warn("⚠️ No se encontró ningún valor en sessionStorage con la clave 'surveyAccess'")
+        //alert("No se encontró información de acceso a la encuesta")
         return
       }
       
@@ -97,17 +97,17 @@ export default function SurveyPage() {
         parsed = JSON.parse(stored)
       } catch (err) {
         console.error("❌ Error parseando surveyAccess:", err, stored)
-        alert("Error leyendo la información de acceso")
+        //alert("Error leyendo la información de acceso")
         return
       }
 
-      console.log("✅ Datos recuperados de sessionStorage:", parsed)
+      //console.log("✅ Datos recuperados de sessionStorage:", parsed)
 
       const { schoolId, surveyType, participationId } = JSON.parse(stored)
 
       if (!participationId) {
-        console.warn("⚠️ participationId faltante. Datos completos:", parsed)
-        alert("No se encontró el ID de participación")
+        //console.warn("⚠️ participationId faltante. Datos completos:", parsed)
+        //alert("No se encontró el ID de participación")
         return
       }
 
@@ -136,7 +136,7 @@ export default function SurveyPage() {
         if (error) throw error
 
         router.push("/gracias")
-        console.log("🎯 participationId detectado correctamente:", participationId)
+        //console.log("🎯 participationId detectado correctamente:", participationId)
     } catch (error) {
       console.error(error)
       alert("Error al enviar la encuesta")
