@@ -13,9 +13,23 @@ export async function POST(req: Request) {
       )
     }
 
-    // Generar ID manualmente
-    const newId = uuidv4()
+    // 1️⃣ Buscar el school_id real desde encuesta_relacionada
+    const { data: relacion, error: relacionError } = await supabase
+      .from("encuesta_relacionada")
+      .select("school_id")
+      .eq("cod_mod", schoolId) // 👈 schoolId aquí es el código modular (0452011)
+      .single()
 
+    if (relacionError || !relacion) {
+      return NextResponse.json(
+        { error: "No se encontró el colegio en encuesta_relacionada" },
+        { status: 400 }
+      )
+    }
+
+    const realSchoolId = relacion.school_id
+
+    // 2️⃣ Determinar la encuesta según el nivel
     let surveyId: number
     const nivel = level.trim().toLowerCase()
 
@@ -24,21 +38,22 @@ export async function POST(req: Request) {
     } else if (nivel.includes("secundaria")) {
       surveyId = 2
     } else {
-      // En caso de que no coincida con ninguno
       return NextResponse.json(
         { error: "Nivel educativo no reconocido" },
         { status: 400 }
       )
     }
 
-    // Insertar nueva participación
+    // 3️⃣ Crear el registro de participación
+    const newId = uuidv4()
+
     const { error } = await supabase
       .from("survey_participations")
       .insert([
         {
           id: newId,
-          survey_id: surveyId, // ⚙️ ajusta si es necesario
-          school_id: schoolId,
+          survey_id: surveyId,
+          school_id: realSchoolId, // ✅ ahora usa el ID real
           education_level: level,
           grade,
           section,
@@ -57,7 +72,6 @@ export async function POST(req: Request) {
       )
     }
 
-    // ✅ Devolver el id que generamos manualmente
     return NextResponse.json({ id: newId })
   } catch (err) {
     console.error("Error en /api/participacion:", err)
