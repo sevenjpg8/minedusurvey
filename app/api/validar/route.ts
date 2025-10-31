@@ -1,77 +1,50 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
 
-// Función para extraer el código de acceso del token
-function extraerCodigoAcceso(token: string): string {
-  const match = token.match(/[AE]/);
-  if (!match) return "";
-  const index = match.index!;
-  let parte = token.slice(index);
-  if (parte.endsWith("0")) parte = parte.slice(0, -1);
-  return parte;
-}
-
-export async function POST(req: Request) {  
+export async function POST(req: Request) {
   try {
-    const { codigoModular, codigoAcceso } = await req.json();
+    const { cod_mod, codigo_estudiante } = await req.json();
 
-    // 🔹 Validar campos
-    if (!codigoModular?.trim() || !codigoAcceso?.trim()) {
+    // 🔹 Validar campos requeridos
+    if (!cod_mod?.trim() || !codigo_estudiante?.trim()) {
       return NextResponse.json(
         { error: "Por favor, completa ambos campos" },
         { status: 400 }
       );
     }
 
-    const codigoNum = Number(codigoModular);
-    if (isNaN(codigoNum)) {
-      return NextResponse.json(
-        { error: "El código modular debe ser numérico" },
-        { status: 400 }
-      );
-    }
-
-    // 🔹 Buscar el registro en la tabla `codigo_modular`
-    const { data: modularData, error: modularError } = await supabase
-      .from("codigo_modular_new_prueba")
-      .select("codigo, token, school_id")
-      .eq("codigo", codigoNum)
+    // 🔹 Buscar el registro en la tabla `encuesta_relacionada`
+    const { data: registro, error: registroError } = await supabase
+      .from("encuesta_relacionada")
+      .select("cod_mod, school_id, education_level, codigo_estudiante, token")
+      .eq("cod_mod", cod_mod)
+      .eq("codigo_estudiante", codigo_estudiante)
       .single();
 
-    if (modularError || !modularData) {
-      console.error("No se encontró el código modular:", modularError);
+    if (registroError || !registro) {
+      console.error("Error al validar acceso:", registroError);
       return NextResponse.json(
-        { error: "codigo_modular_invalido" },
+        { error: "credenciales_invalidas" },
         { status: 400 }
       );
     }
 
-    // 🔹 Verificar el código de acceso extraído del token
-    const accesoCalculado = extraerCodigoAcceso(modularData.token);
-    if (accesoCalculado !== codigoAcceso) {
-      return NextResponse.json(
-        { error: "codigo_acceso_invalido" },
-        { status: 400 }
-      );
-    }
-
-    // 🔹 Buscar los datos del colegio (schools)
+    // 🔹 Buscar los datos del colegio (tabla `schools`)
     const { data: schoolData, error: schoolError } = await supabase
       .from("schools")
       .select("id, name, departamento, nivel_educativo, ugel_id")
-      .eq("id", modularData.school_id)
+      .eq("id", registro.school_id)
       .single();
 
     if (schoolError || !schoolData) {
-      console.error("Error al obtener school:", schoolError);
+      console.error("Error al obtener colegio:", schoolError);
       return NextResponse.json(
         { error: "No se encontró la información del colegio" },
         { status: 404 }
       );
     }
 
-
-    // 🔹 Obtener el nombre de la UGEL real desde la tabla `ugels`
+    // 🔹 Obtener el nombre de la UGEL (tabla `ugels`)
     const { data: ugelData, error: ugelError } = await supabase
       .from("ugels")
       .select("name")
@@ -85,12 +58,14 @@ export async function POST(req: Request) {
     // 🔹 Construir respuesta final
     return NextResponse.json({
       success: true,
-      schools: {
-        codigoModular: modularData.codigo,
-        dre: schoolData.departamento, // o el campo de DRE si lo tienes aparte
+      data: {
+        codigoModular: registro.cod_mod,
+        codigoEstudiante: registro.codigo_estudiante,
+        dre: schoolData.departamento,
         ugel: ugelData?.name ?? "SIN UGEL",
         institution: schoolData.name,
         level: schoolData.nivel_educativo,
+        token: registro.token,
       },
     });
   } catch (err) {

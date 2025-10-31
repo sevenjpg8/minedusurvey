@@ -8,8 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function AccesoPage() {
   const router = useRouter()
-  const [codigoModular, setCodigoModular] = useState("")
-  const [codigoAcceso, setCodigoAcceso] = useState("")
+  const [codMod, setCodMod] = useState("")
+  const [codigoEstudiante, setCodigoEstudiante] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -19,7 +19,7 @@ export default function AccesoPage() {
     if (/^\d*$/.test(value)) {
       // Máximo 7 caracteres
       if (value.length <= 7) {
-        setCodigoModular(value)
+        setCodMod(value)
       }
     }
   }
@@ -30,13 +30,13 @@ export default function AccesoPage() {
     setError("")
     
     //Validación local del código modular
-    if (codigoModular.length !== 7) {
+    if (codMod.length !== 7) {
       setError("El código modular necesita 7 caracteres")
       return
     }
 
     //Validación local del código de acceso
-    if (!codigoAcceso) {
+    if (!codigoEstudiante) {
       setError("Debes ingresar tu código de acceso")
       return
     }
@@ -46,7 +46,7 @@ export default function AccesoPage() {
       const response = await fetch("/api/validar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ codigoModular, codigoAcceso }),
+        body: JSON.stringify({ cod_mod: codMod, codigo_estudiante: codigoEstudiante }),
       })
 
       const result = await response.json()
@@ -64,7 +64,7 @@ export default function AccesoPage() {
       }
 
       // Guardar los datos del colegio en sessionStorage
-      sessionStorage.setItem("accessData", JSON.stringify(result.schools))
+      sessionStorage.setItem("accessData", JSON.stringify(result.data))
 
       // Redirigir a la página de identificación
       router.push("/identificacion")
@@ -116,7 +116,7 @@ export default function AccesoPage() {
                 </label>
                 <input
                   type="text"
-                  value={codigoModular}
+                  value={codMod}
                   onChange={handleCodigoModularChange}
                   placeholder="Ingresa el código modular"
                   maxLength={7}
@@ -131,8 +131,8 @@ export default function AccesoPage() {
                 </label>
                 <input
                   type="text"
-                  value={codigoAcceso}
-                  onChange={(e) => setCodigoAcceso(e.target.value)}
+                  value={codigoEstudiante}
+                  onChange={(e) => setCodigoEstudiante(e.target.value)}
                   placeholder="Ingresa tu código de acceso"
                   className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-900"
                 />
