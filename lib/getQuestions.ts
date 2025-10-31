@@ -2,16 +2,16 @@
 export interface Question {
   id: number
   text: string
-  options: string[]
   type?: string
   survey_id?: number
   dimension_id?: number
   order?: number
   prefix?: string | null
+  options: { id: number; text: string }[] 
 }
 
 // Función para traer opciones según question_id
-async function getOptions(questionIds: number[]): Promise<{ question_id: number; text: string }[]> {
+async function getOptions(questionIds: number[]): Promise<{ id: number; question_id: number; text: string }[]> {
   if (questionIds.length === 0) return []
 
   const ids = questionIds.join(",")
@@ -61,7 +61,9 @@ export async function getQuestions(surveyId: number): Promise<Question[]> {
 
     // 3️⃣ Transformar a la interfaz que necesita la UI
     return questionsData.map((q: any) => {
-      const opts = optionsData.filter((opt) => opt.question_id === q.id).map((opt) => opt.text)
+      const opts = optionsData
+        .filter((opt) => opt.question_id === q.id)
+        .map((opt) => ({ id: opt.id, text: opt.text })) // 👈 solo este map
 
       return {
         id: q.id,
@@ -69,10 +71,10 @@ export async function getQuestions(surveyId: number): Promise<Question[]> {
         type: q.type,
         order: q.order,
         prefix: q.prefix,
-        // Si no hay opciones, fallback a valores por defecto
-        options: opts.length > 0 ? opts : ["Totalmente de acuerdo", "De acuerdo", "En desacuerdo", "Totalmente en desacuerdo"],
+        options: opts,
       }
     })
+
   } catch (err) {
     console.error("Error en getQuestions:", err)
     throw err

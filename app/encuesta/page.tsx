@@ -16,7 +16,6 @@ interface Question {
   order?: number
 }
 
-
 export default function SurveyPage() {
   const router = useRouter()
   const [questions, setQuestions] = useState<QuestionType[]>([])
@@ -115,12 +114,13 @@ export default function SurveyPage() {
       const answersPayload = answers.map((selectedIndex, i) => {
         const question = questions[i]
         if (selectedIndex === null) return null // ignorar si no respondió
-          const optionText = question.options[selectedIndex]
-          return {
+
+        const option = question.options[selectedIndex]
+        return {
             survey_participation_id: participationId,
             question_id: question.id,
-            option_id: null, // si tienes un ID real de la opción en tu tabla, aquí se coloca
-            value: optionText,
+            option_id: option.id, // si tienes un ID real de la opción en tu tabla, aquí se coloca
+            value: option.text,
           }
         }).filter(Boolean) // eliminar nulls
 
@@ -196,7 +196,7 @@ export default function SurveyPage() {
           <div className="grid grid-cols-2 gap-4 mb-8">
             {question.options.map((option, index) => (
               <button
-                key={index}
+                key={option.id}
                 onClick={() => handleSelectAnswer(index)}
                 className={`p-4 rounded-lg font-semibold transition-all ${
                   selectedAnswer === index
@@ -204,7 +204,7 @@ export default function SurveyPage() {
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                {option}
+                {option.text}
               </button>
             ))}
           </div>
