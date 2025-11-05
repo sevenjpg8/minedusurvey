@@ -28,7 +28,7 @@ export default function AccesoPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    
+
     //Validación local del código modular
     if (codMod.length !== 7) {
       setError("El código modular necesita 7 caracteres")
@@ -63,11 +63,16 @@ export default function AccesoPage() {
         return
       }
 
-      // Guardar los datos del colegio en sessionStorage
+      // Dentro de handleSubmit, reemplaza la parte del router.push por esto 👇
+
       sessionStorage.setItem("accessData", JSON.stringify(result.data))
 
-      // Redirigir a la página de identificación
-      router.push("/identificacion")
+      if (result.esDirector) {
+        router.push("/dashboard")
+      } else {
+        router.push("/identificacion")
+      }
+
     } catch (err) {
       console.error(err)
       setError("Ocurrió un error al validar los datos")

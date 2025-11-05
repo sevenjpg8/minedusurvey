@@ -5,7 +5,6 @@ export async function POST(req: Request) {
   try {
     const { cod_mod, codigo_estudiante } = await req.json();
 
-    // 🔹 Validar campos requeridos
     if (!cod_mod?.trim() || !codigo_estudiante?.trim()) {
       return NextResponse.json(
         { error: "Por favor, completa ambos campos" },
@@ -13,23 +12,22 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🔹 Buscar el registro en la tabla `encuesta_relacionada`
+    // 🔹 Verificar si el código coincide con codigo_estudiante o codigo_director
     const { data: registro, error: registroError } = await supabase
       .from("encuesta_relacionada")
-      .select("cod_mod, school_id, education_level, codigo_estudiante, token")
+      .select("cod_mod, school_id, education_level, codigo_estudiante, codigo_director, token")
       .eq("cod_mod", cod_mod)
-      .eq("codigo_estudiante", codigo_estudiante)
+      .or(`codigo_estudiante.eq.${codigo_estudiante},codigo_director.eq.${codigo_estudiante}`)
       .single();
 
     if (registroError || !registro) {
-      console.error("Error al validar acceso:", registroError);
       return NextResponse.json(
         { error: "credenciales_invalidas" },
         { status: 400 }
       );
     }
 
-    // 🔹 Buscar los datos del colegio (tabla `schools`)
+    // 🔹 Buscar datos del colegio
     const { data: schoolData, error: schoolError } = await supabase
       .from("schools")
       .select("id, name, departamento, nivel_educativo, ugel_id")
@@ -37,30 +35,28 @@ export async function POST(req: Request) {
       .single();
 
     if (schoolError || !schoolData) {
-      console.error("Error al obtener colegio:", schoolError);
       return NextResponse.json(
         { error: "No se encontró la información del colegio" },
         { status: 404 }
       );
     }
 
-    // 🔹 Obtener el nombre de la UGEL (tabla `ugels`)
-    const { data: ugelData, error: ugelError } = await supabase
+    const { data: ugelData } = await supabase
       .from("ugels")
       .select("name")
       .eq("id", schoolData.ugel_id)
       .single();
 
-    if (ugelError) {
-      console.error("Error al obtener UGEL:", ugelError);
-    }
+    // 🔹 Detectar si el código corresponde al director
+    const esDirector = registro.codigo_director === codigo_estudiante;
 
-    // 🔹 Construir respuesta final
     return NextResponse.json({
       success: true,
+      esDirector,
       data: {
         codigoModular: registro.cod_mod,
         codigoEstudiante: registro.codigo_estudiante,
+        codigoDirector: registro.codigo_director,
         dre: schoolData.departamento,
         ugel: ugelData?.name ?? "SIN UGEL",
         institution: schoolData.name,
