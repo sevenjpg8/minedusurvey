@@ -67,14 +67,16 @@ export default function AccesoPage() {
 
       sessionStorage.setItem("accessData", JSON.stringify(result.data))
 
-      // AccesoPage -> handleSubmit
       if (result.esDirector) {
-        document.cookie = `accessData=${encodeURIComponent(JSON.stringify(result.data))}; path=/`;
-        router.push("/dashboard"); // esto ahora pasará por el proxy
+        // Director → cookie con codigoDirector
+        document.cookie = `accessData=${encodeURIComponent(JSON.stringify({ codigoDirector: result.data.codigoDirector }))}; path=/`;
+        router.push("/dashboard"); // pasa por el proxy
       } else {
-        sessionStorage.setItem("accessData", JSON.stringify(result.data));
+        // Estudiante → cookie con codigoEstudiante
+        document.cookie = `accessData=${encodeURIComponent(JSON.stringify({ codigoEstudiante: result.data.codigoEstudiante }))}; path=/`;
         router.push("/identificacion");
       }
+
 
 
     } catch (err) {
