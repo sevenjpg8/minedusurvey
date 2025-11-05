@@ -67,11 +67,15 @@ export default function AccesoPage() {
 
       sessionStorage.setItem("accessData", JSON.stringify(result.data))
 
+      // AccesoPage -> handleSubmit
       if (result.esDirector) {
-        router.push("/dashboard")
+        document.cookie = `accessData=${encodeURIComponent(JSON.stringify(result.data))}; path=/`;
+        router.push("/dashboard"); // esto ahora pasará por el proxy
       } else {
-        router.push("/identificacion")
+        sessionStorage.setItem("accessData", JSON.stringify(result.data));
+        router.push("/identificacion");
       }
+
 
     } catch (err) {
       console.error(err)

@@ -1,11 +1,31 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Header from "@/components/header"
 import { TrendingUp, TrendingDown, BarChart3, Users, FileText, School } from "lucide-react"
 
 export default function DashboardPage() {
+
+  const router = useRouter()
+  const [loadingAuth, setLoadingAuth] = useState(true)
   const [timeFilter, setTimeFilter] = useState("total")
+
+  useEffect(() => {
+    const accessDataRaw = sessionStorage.getItem("accessData")
+    const accessData = accessDataRaw ? JSON.parse(accessDataRaw) : null
+
+    if (!accessData || !accessData.codigoDirector) {
+      router.replace("/acceso")
+      return
+    }
+
+    setLoadingAuth(false)
+  }, [router])
+
+  if (loadingAuth) {
+    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>
+  }
 
   const getStats = () => {
     const stats = {
