@@ -13,7 +13,8 @@ export default function DirectorDashboard() {
   useEffect(() => {
     console.log("📊 Iniciando carga del dashboard del director...")
 
-    const accessDataRaw = localStorage.getItem("accessData")
+    const accessDataRaw = sessionStorage.getItem("accessData")
+
     if (!accessDataRaw) {
       console.warn("⚠️ No se encontró accessData en localStorage.")
       router.push("/acceso")
