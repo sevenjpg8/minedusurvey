@@ -257,10 +257,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <option value="a">A</option>
                 <option value="b">B</option>
                 <option value="c">C</option>
-                <option value="a">D</option>
-                <option value="c">E</option>
-                <option value="b">F</option>
-                <option value="c">G</option>
+                <option value="d">D</option>
+                <option value="e">E</option>
+                <option value="f">F</option>
+                <option value="g">G</option>
               </select>
             </div>
             <div>
