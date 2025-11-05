@@ -8,13 +8,14 @@ import { getQuestions, Question as QuestionType } from "@/lib/getQuestions"
 interface Question {
   id: number
   text: string
-  options: string[]
+  options: { id: number; text: string; next_question_id?: number | null }[] // 👈 agregado
   prefix?: string | null
   type?: string
   survey_id?: number
   dimension_id?: number
   order?: number
 }
+
 
 export default function SurveyPage() {
   const router = useRouter()
@@ -59,20 +60,30 @@ export default function SurveyPage() {
     const newAnswers = [...answers]
     newAnswers[currentQuestion] = index
     setAnswers(newAnswers)
-
-    // setTimeout(() => {
-    //   if (currentQuestion < questions.length - 1) {
-    //     setCurrentQuestion(currentQuestion + 1)
-    //     setSelectedAnswer(answers[currentQuestion + 1])
-    //   }
-    // }, 300)
   }
 
   const handleNext = () => {
+    const question = questions[currentQuestion]
+    const selectedIndex = answers[currentQuestion]
+    if (selectedIndex === null || selectedIndex === undefined) return
+
+    const selectedOption = question.options[selectedIndex]
+
+    if (selectedOption.next_question_id) {
+      const nextIndex = questions.findIndex(
+        (q) => q.id === selectedOption.next_question_id
+      )
+      if (nextIndex !== -1) {
+        setCurrentQuestion(nextIndex)
+        setSelectedAnswer(answers[nextIndex] ?? null)
+        return
+      }
+    }
+
+    // 👇 Si no hay flujo condicional, seguir el orden normal
     if (currentQuestion < questions.length - 1) {
-      const nextIndex = currentQuestion + 1
-      setCurrentQuestion(nextIndex)
-      setSelectedAnswer(answers[nextIndex] ?? null)
+      setCurrentQuestion(currentQuestion + 1)
+      setSelectedAnswer(answers[currentQuestion + 1] ?? null)
     }
   }
 
@@ -191,7 +202,7 @@ export default function SurveyPage() {
           )}
 
           <h2 className="text-2xl font-bold text-blue-900 mb-8">
-            {currentQuestion + 1}. {question.text}
+            {question.text}
           </h2>
 
           <div className="grid grid-cols-2 gap-4 mb-8">
