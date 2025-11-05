@@ -21,7 +21,7 @@ export default function SurveyPage() {
   const router = useRouter()
   const [questions, setQuestions] = useState<QuestionType[]>([])
   const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [answers, setAnswers] = useState<(number | null)[]>([])
+  const [answers, setAnswers] = useState<Record<number, number>>({})
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [timeLeft, setTimeLeft] = useState(300)
 
@@ -55,37 +55,34 @@ export default function SurveyPage() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
 
-  const handleSelectAnswer = (index: number) => {
-    setSelectedAnswer(index)
-    const newAnswers = [...answers]
-    newAnswers[currentQuestion] = index
-    setAnswers(newAnswers)
+  const handleSelectAnswer = (optionId: number) => {
+    const questionId = questions[currentQuestion].id
+    setSelectedAnswer(optionId)
+    setAnswers(prev => ({ ...prev, [questionId]: optionId }))
   }
+
 
   const handleNext = () => {
     const question = questions[currentQuestion]
-    const selectedIndex = answers[currentQuestion]
-    if (selectedIndex === null || selectedIndex === undefined) return
+    const selectedOptionId = answers[question.id]
+    if (!selectedOptionId) return
 
-    const selectedOption = question.options[selectedIndex]
-
-    if (selectedOption.next_question_id) {
-      const nextIndex = questions.findIndex(
-        (q) => q.id === selectedOption.next_question_id
-      )
+    const selectedOption = question.options.find(o => o.id === selectedOptionId)
+    if (selectedOption?.next_question_id) {
+      const nextIndex = questions.findIndex(q => q.id === selectedOption.next_question_id)
       if (nextIndex !== -1) {
         setCurrentQuestion(nextIndex)
-        setSelectedAnswer(answers[nextIndex] ?? null)
+        setSelectedAnswer(answers[questions[nextIndex].id] ?? null)
         return
       }
     }
 
-    // 👇 Si no hay flujo condicional, seguir el orden normal
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1)
-      setSelectedAnswer(answers[currentQuestion + 1] ?? null)
+      setSelectedAnswer(answers[questions[currentQuestion + 1].id] ?? null)
     }
   }
+
 
   const handlePrevious = () => {
     if (currentQuestion > 0) {
@@ -98,62 +95,50 @@ export default function SurveyPage() {
     try {
       const stored = sessionStorage.getItem("surveyAccess")
       console.log("🟦 Revisando sessionStorage...")
-      if (!stored) {
-        //console.warn("⚠️ No se encontró ningún valor en sessionStorage con la clave 'surveyAccess'")
-        //alert("No se encontró información de acceso a la encuesta")
-        return
-      }
-      
+      if (!stored) return
+
       let parsed
       try {
         parsed = JSON.parse(stored)
       } catch (err) {
         console.error("❌ Error parseando surveyAccess:", err, stored)
-        //alert("Error leyendo la información de acceso")
         return
       }
 
-      //console.log("✅ Datos recuperados de sessionStorage:", parsed)
+      const { participationId } = parsed
+      if (!participationId) return
 
-      const { schoolId, surveyType, participationId } = JSON.parse(stored)
+      // ✅ Recorremos las respuestas efectivas
+      const answersPayload = Object.entries(answers).map(([questionId, optionId]) => {
+        const question = questions.find(q => q.id === Number(questionId))
+        const option = question?.options.find(o => o.id === optionId)
 
-      if (!participationId) {
-        //console.warn("⚠️ participationId faltante. Datos completos:", parsed)
-        //alert("No se encontró el ID de participación")
-        return
-      }
-
-      const answersPayload = answers.map((selectedIndex, i) => {
-        const question = questions[i]
-        if (selectedIndex === null) return null // ignorar si no respondió
-
-        const option = question.options[selectedIndex]
         return {
-            survey_participation_id: participationId,
-            question_id: question.id,
-            option_id: option.id, // si tienes un ID real de la opción en tu tabla, aquí se coloca
-            value: option.text,
-          }
-        }).filter(Boolean) // eliminar nulls
-
-        if (answersPayload.length === 0) {
-          alert("No hay respuestas para enviar")
-          return
+          survey_participation_id: participationId,
+          question_id: Number(questionId),
+          option_id: optionId,
+          value: option?.text ?? "",
         }
+      })
 
-        const { data, error } = await supabase
-          .from("answers")
-          .insert(answersPayload)
+      if (answersPayload.length === 0) {
+        alert("No hay respuestas para enviar")
+        return
+      }
 
-        if (error) throw error
+      const { error } = await supabase
+        .from("answers")
+        .insert(answersPayload)
 
-        router.push("/gracias")
-        //console.log("🎯 participationId detectado correctamente:", participationId)
+      if (error) throw error
+
+      router.push("/gracias")
     } catch (error) {
       console.error(error)
       alert("Error al enviar la encuesta")
     }
   }
+
 
   if (!questions || questions.length === 0) {
     return (
@@ -206,12 +191,12 @@ export default function SurveyPage() {
           </h2>
 
           <div className="grid grid-cols-2 gap-4 mb-8">
-            {question.options.map((option, index) => (
+            {question.options.map((option) => (
               <button
                 key={option.id}
-                onClick={() => handleSelectAnswer(index)}
+                onClick={() => handleSelectAnswer(option.id)}
                 className={`p-4 rounded-lg font-semibold transition-all ${
-                  selectedAnswer === index
+                  selectedAnswer === option.id
                     ? "bg-blue-900 text-white shadow-md scale-105 cursor-pointer"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
                 }`}
