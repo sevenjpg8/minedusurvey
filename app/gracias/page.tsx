@@ -51,14 +51,6 @@ export default function GraciasPage() {
 
             <p className="text-gray-800 font-semibold text-base">¡Muchas gracias por tu tiempo y colaboración!</p>
           </div>
-
-          {/* Return Button */}
-          <button
-            onClick={handleReturn}
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200"
-          >
-            Volver al portal del MINEDU
-          </button>
         </div>
       </div>
     </main>
