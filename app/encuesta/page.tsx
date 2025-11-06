@@ -26,22 +26,22 @@ export default function SurveyPage() {
   const [timeLeft, setTimeLeft] = useState(300)
 
   useEffect(() => {
-  const access = sessionStorage.getItem("surveyAccess")
-  if (!access) return
+    const access = sessionStorage.getItem("surveyAccess")
+    if (!access) return
 
-  const { surveyId } = JSON.parse(access)
+    const { surveyId } = JSON.parse(access)
 
-  const loadQuestions = async () => {
-    try {
-      const data = await getQuestions(surveyId)
-      setQuestions(data)
-    } catch (error) {
-      console.error("Error cargando preguntas", error)
+    const loadQuestions = async () => {
+      try {
+        const data = await getQuestions(surveyId)
+        setQuestions(data)
+      } catch (error) {
+        console.error("Error cargando preguntas", error)
+      }
     }
-  }
 
-  loadQuestions()
-}, [router])
+    loadQuestions()
+  }, [router])
 
   // Timer
   useEffect(() => {
@@ -87,7 +87,7 @@ export default function SurveyPage() {
   const handlePrevious = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1)
-      setSelectedAnswer(answers[currentQuestion - 1] ?? null) 
+      setSelectedAnswer(answers[currentQuestion - 1] ?? null)
     }
   }
 
@@ -132,7 +132,10 @@ export default function SurveyPage() {
 
       if (error) throw error
 
+      await fetch("/api/completed", { method: "POST" })
+
       router.push("/gracias")
+
     } catch (error) {
       console.error(error)
       alert("Error al enviar la encuesta")
@@ -195,11 +198,10 @@ export default function SurveyPage() {
               <button
                 key={option.id}
                 onClick={() => handleSelectAnswer(option.id)}
-                className={`p-4 rounded-lg font-semibold transition-all ${
-                  selectedAnswer === option.id
+                className={`p-4 rounded-lg font-semibold transition-all ${selectedAnswer === option.id
                     ? "bg-blue-900 text-white shadow-md scale-105 cursor-pointer"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
-                }`}
+                  }`}
               >
                 {option.text}
               </button>
@@ -210,11 +212,10 @@ export default function SurveyPage() {
             <button
               onClick={handlePrevious}
               disabled={currentQuestion === 0}
-              className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
-                currentQuestion === 0
+              className={`px-6 py-3 rounded-lg font-semibold transition-colors ${currentQuestion === 0
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-gray-400 text-white hover:bg-gray-500 cursor-pointer"
-              }`}
+                }`}
             >
               Anterior
             </button>
@@ -223,9 +224,8 @@ export default function SurveyPage() {
               <button
                 onClick={handleSubmit}
                 disabled={!isAnswered}
-                className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
-                  !isAnswered ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-red-600 text-white hover:bg-red-700 cursor-pointer"
-                }`}
+                className={`px-6 py-3 rounded-lg font-semibold transition-colors ${!isAnswered ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                  }`}
               >
                 Enviar Encuesta
               </button>
@@ -233,9 +233,8 @@ export default function SurveyPage() {
               <button
                 onClick={handleNext}
                 disabled={!isAnswered}
-                className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
-                  !isAnswered ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
-                }`}
+                className={`px-6 py-3 rounded-lg font-semibold transition-colors ${!isAnswered ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+                  }`}
               >
                 Siguiente
               </button>
