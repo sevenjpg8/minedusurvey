@@ -11,14 +11,12 @@ export default function GraciasPage() {
   useEffect(() => {
     const accessData = sessionStorage.getItem("accessData")
     if (!accessData) {
-      router.replace("/acceso") // usa replace para no dejar /identificacion en el historial
+      router.replace("/acceso")
       return
     }
 
-    // ✅ Reemplaza el historial actual para limpiar el "paso anterior"
     window.history.replaceState(null, "", window.location.href)
 
-    // 🔒 Bloquear navegación hacia atrás completamente
     const handlePopState = () => {
       window.history.pushState(null, "", window.location.href)
     }
@@ -34,7 +32,7 @@ export default function GraciasPage() {
 
   const handleReturn = () => {
     sessionStorage.removeItem("accessData")
-    router.replace("/acceso") // también replace aquí
+    router.replace("/acceso")
   }
 
   return (
