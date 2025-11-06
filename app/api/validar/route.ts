@@ -15,7 +15,9 @@ export async function POST(req: Request) {
     // 🔹 Verificar si el código coincide con codigo_estudiante o codigo_director
     const { data: registro, error: registroError } = await supabase
       .from("encuesta_acceso")
-      .select("cod_mod, school_id, education_level, codigo_estudiante, codigo_director, token")
+      .select(
+        "cod_mod, school_id, education_level, codigo_estudiante, codigo_director, token"
+      )
       .eq("cod_mod", cod_mod)
       .or(`codigo_estudiante.eq.${codigo_estudiante},codigo_director.eq.${codigo_estudiante}`)
       .single();
@@ -27,10 +29,22 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🔹 Buscar datos del colegio
+    // 🔹 Buscar datos del colegio (con relaciones)
     const { data: schoolData, error: schoolError } = await supabase
       .from("school_new")
-      .select("id, name, departamento, nivel_educativo, ugel_id")
+      .select(`
+        id,
+        name,
+        nivel_educativo,
+        ugel_new (
+          id,
+          name,
+          dres (
+            id,
+            name
+          )
+        )
+      `)
       .eq("id", registro.school_id)
       .single();
 
@@ -41,11 +55,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data: ugelData } = await supabase
-      .from("ugel_new")
-      .select("name")
-      .eq("id", schoolData.ugel_id)
-      .single();
+    // 🔹 Acceder correctamente a los datos (arrays)
+    const ugel = Array.isArray(schoolData.ugel_new) ? schoolData.ugel_new[0] : schoolData.ugel_new;
+    const dre = ugel?.dres ? (Array.isArray(ugel.dres) ? ugel.dres[0] : ugel.dres) : null;
+
+    const ugelName = ugel?.name ?? "SIN UGEL";
+    const dreName = dre?.name ?? "SIN DRE";
 
     // 🔹 Detectar si el código corresponde al director
     const esDirector = registro.codigo_director === codigo_estudiante;
@@ -57,8 +72,8 @@ export async function POST(req: Request) {
         codigoModular: registro.cod_mod,
         codigoEstudiante: registro.codigo_estudiante,
         codigoDirector: registro.codigo_director,
-        dre: schoolData.departamento,
-        ugel: ugelData?.name ?? "SIN UGEL",
+        dre: dreName,
+        ugel: ugelName,
         institution: schoolData.name,
         level: schoolData.nivel_educativo,
         token: registro.token,

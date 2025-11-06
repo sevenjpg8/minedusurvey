@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Alert, AlertDescription } from "./ui/alert"
 
-
 interface AccessData {
   codigoModular: string
   dre: string
