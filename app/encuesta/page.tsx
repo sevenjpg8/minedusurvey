@@ -183,7 +183,7 @@ export default function SurveyPage() {
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
           {question.prefix && (
             <div className="mb-8 pb-8 border-b border-gray-200">
-              <p className="text-gray-700 text-sm font-medium">
+              <p className="text-gray-700 font-medium">
                 {question.prefix}
               </p>
             </div>
