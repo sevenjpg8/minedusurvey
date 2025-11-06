@@ -13,16 +13,16 @@ export async function POST(req: Request) {
       )
     }
 
-    // 1️⃣ Buscar el school_id real desde encuesta_relacionada
+    // 1️⃣ Buscar el school_id real desde encuesta_acceso
     const { data: relacion, error: relacionError } = await supabase
-      .from("encuesta_relacionada")
+      .from("encuesta_acceso")
       .select("school_id")
       .eq("cod_mod", schoolId) // 👈 schoolId aquí es el código modular (0452011)
       .single()
 
     if (relacionError || !relacion) {
       return NextResponse.json(
-        { error: "No se encontró el colegio en encuesta_relacionada" },
+        { error: "No se encontró el colegio en encuesta_acceso" },
         { status: 400 }
       )
     }

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
     // 🔹 Verificar si el código coincide con codigo_estudiante o codigo_director
     const { data: registro, error: registroError } = await supabase
-      .from("encuesta_relacionada")
+      .from("encuesta_acceso")
       .select("cod_mod, school_id, education_level, codigo_estudiante, codigo_director, token")
       .eq("cod_mod", cod_mod)
       .or(`codigo_estudiante.eq.${codigo_estudiante},codigo_director.eq.${codigo_estudiante}`)
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
     // 🔹 Buscar datos del colegio
     const { data: schoolData, error: schoolError } = await supabase
-      .from("schools")
+      .from("school_new")
       .select("id, name, departamento, nivel_educativo, ugel_id")
       .eq("id", registro.school_id)
       .single();
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     }
 
     const { data: ugelData } = await supabase
-      .from("ugels")
+      .from("ugel_new")
       .select("name")
       .eq("id", schoolData.ugel_id)
       .single();

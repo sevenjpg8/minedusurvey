@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     // 1️⃣ Obtener school_id del director
     const { rows: schoolRows } = await sql`
       SELECT school_id 
-      FROM encuesta_relacionada
+      FROM encuesta_acceso
       WHERE codigo_director = ${codigoDirector}
       LIMIT 1;
     `

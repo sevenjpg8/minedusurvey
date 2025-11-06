@@ -7,7 +7,7 @@ export async function POST(req: Request) {
 
     // 1️⃣ Obtener las escuelas vinculadas al director
     const { data: escuelasRelacionadas, error: errorEscuelas } = await supabase
-      .from("encuesta_relacionada")
+      .from("encuesta_acceso")
       .select("school_id")
       .eq("codigo_director", codigo_director)
 
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
     // 3️⃣ Obtener escuelas y sus UGEL
     const { data: schoolsData, error: errorSchools } = await supabase
-      .from("schools")
+      .from("school_new")
       .select("id, ugel_id, nivel_educativo")
       .in("id", schoolIds)
 
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     // Obtener DRE de los UGEL
     const ugelIds = Array.from(new Set(schoolsData.map(s => s.ugel_id)))
     const { data: dresData, error: errorDres } = await supabase
-      .from("ugels")
+      .from("ugel_new")
       .select("id, dre_id")
       .in("id", ugelIds)
 
