@@ -40,20 +40,25 @@ export default function DirectorDashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-100 flex flex-col">
+    <main className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
-      <br />
-      <Card className="p-6 max-w-5xl mx-auto bg-white shadow-md">
-        <h2 className="text-xl font-semibold mb-4">
-          {accessData.institution} ({accessData.level})
-        </h2>
-        <p className="text-gray-600 mb-6">
-          DRE: {accessData.dre} • UGEL: {accessData.ugel}
-        </p>
 
-        {/* ✅ Pasamos el código del director */}
-        <StatsGrid codigoDirector={accessData.codigoDirector} />
-      </Card>
+      <div className="w-full px-6 py-6">
+        <div className="bg-white shadow-lg rounded-2xl p-8 w-full">
+
+          <h2 className="text-2xl font-semibold mb-2">
+            {accessData.institution} ({accessData.level})
+          </h2>
+
+          <p className="text-gray-600 mb-8 text-lg">
+            DRE: {accessData.dre} • UGEL: {accessData.ugel}
+          </p>
+
+          {/* ✅ Tarjetas ocupan todo el ancho */}
+          <StatsGrid codigoDirector={accessData.codigoDirector} />
+        </div>
+      </div>
     </main>
   )
+
 }
