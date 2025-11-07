@@ -120,15 +120,15 @@ export default function SurveyPage() {
         return
       }
 
-      console.log(`🟩 Enviando ${answersPayload.length} respuestas en un solo INSERT...`)
+      //console.log("📤 Respuestas a enviar:", answersPayload)
+      //console.log(`🔢 Total de respuestas: ${answersPayload.length}`)
+      //console.log(`🟩 Enviando ${answersPayload.length} respuestas en un solo INSERT...`)
 
       const { error } = await supabase
         .from("answers")
         .insert(answersPayload)
 
       if (error) throw error
-
-      await fetch("/api/completed", { method: "POST" })
       
       sessionStorage.removeItem("surveyAccess")
 
