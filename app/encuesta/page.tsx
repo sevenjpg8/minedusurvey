@@ -109,22 +109,18 @@ export default function SurveyPage() {
       if (!participationId) return
 
       // ✅ Recorremos las respuestas efectivas
-      const answersPayload = Object.entries(answers).map(([questionId, optionId]) => {
-        const question = questions.find(q => q.id === Number(questionId))
-        const option = question?.options.find(o => o.id === optionId)
-
-        return {
-          survey_participation_id: participationId,
-          question_id: Number(questionId),
-          option_id: optionId,
-          value: option?.text ?? "",
-        }
-      })
+      const answersPayload = Object.entries(answers).map(([questionId, optionId]) => ({
+        survey_participation_id: participationId,
+        question_id: Number(questionId),
+        option_id: optionId,
+      }))
 
       if (answersPayload.length === 0) {
         alert("No hay respuestas para enviar")
         return
       }
+
+      console.log(`🟩 Enviando ${answersPayload.length} respuestas en un solo INSERT...`)
 
       const { error } = await supabase
         .from("answers")
@@ -133,6 +129,8 @@ export default function SurveyPage() {
       if (error) throw error
 
       await fetch("/api/completed", { method: "POST" })
+      
+      sessionStorage.removeItem("surveyAccess")
 
       router.push("/gracias")
 
