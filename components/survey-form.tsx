@@ -135,7 +135,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   // 🔹 Determinar los grados disponibles según el nivel
   const gradeOptions =
     formData.level.toLowerCase() === "primaria"
-      ? ["1", "2", "3", "4", "5", "6"]
+      ? ["4", "5", "6"]
       : ["1", "2", "3", "4", "5"]
 
   return (
