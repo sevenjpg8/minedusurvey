@@ -97,10 +97,10 @@ export async function POST(req: Request) {
       { nombre: "Grado", valor: totalGrados },
       { nombre: "Nivel Primaria", valor: totalPrimaria },
       { nombre: "Nivel Secundaria", valor: totalSecundaria },
-      { nombre: "Local Educativo", valor: totalColegios },
-      { nombre: "UGEL (Estudiantes)", valor: totalUgelesEstudiantes },
-      { nombre: "DRE (Estudiantes)", valor: totalDresEstudiantes },
-      { nombre: "Nacional", valor: totalNacional },
+      // { nombre: "Local Educativo", valor: totalColegios },
+      // { nombre: "UGEL (Estudiantes)", valor: totalUgelesEstudiantes },
+      // { nombre: "DRE (Estudiantes)", valor: totalDresEstudiantes },
+      // { nombre: "Nacional", valor: totalNacional },
     ]
 
     // 7️⃣ Clasificación de colegios por nivel educativo
