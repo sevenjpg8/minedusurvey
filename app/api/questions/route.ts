@@ -1,35 +1,46 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { dbQuery } from "@/app/config/connection";
 
 export async function GET(req: Request) {
   try {
-    // Obtenemos el parámetro "survey" de la URL
     const { searchParams } = new URL(req.url);
-    const survey = searchParams.get("survey");
+    const survey = searchParams.get("survey"); // primaria | secundaria | etc.
 
     if (!survey) {
-      return NextResponse.json({ error: "No se indicó el tipo de encuesta" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No se indicó el tipo de encuesta" },
+        { status: 400 }
+      );
     }
 
-    // Consultamos la tabla questions según el tipo de encuesta
-    const { data, error } = await supabase
-      .from("questions")
-      .select("id, text, options")
-      .eq("level", survey) // Asegúrate de que tu tabla tenga columna "level": "primaria" o "secundaria"
-      .order("id", { ascending: true });
+    // ✅ Consulta SQL usando tu schema minedu
+    const query = `
+      SELECT 
+        id,
+        text,
+        options
+      FROM minedu.questions
+      WHERE level = $1
+      ORDER BY id ASC;
+    `;
 
-    if (error) {
-      console.error("Error fetching questions:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    const result = await dbQuery(query, [survey]);
+
+    if (!result.rows.length) {
+      return NextResponse.json(
+        { error: "No hay preguntas disponibles" },
+        { status: 404 }
+      );
     }
 
-    if (!data || data.length === 0) {
-      return NextResponse.json({ error: "No hay preguntas disponibles" }, { status: 404 });
-    }
-
-    return NextResponse.json({ questions: data });
+    return NextResponse.json({
+      questions: result.rows,
+    });
   } catch (err) {
     console.error("Unexpected error:", err);
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    );
   }
 }
