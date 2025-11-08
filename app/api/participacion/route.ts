@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/supabaseClient"
+import { dbQuery } from "@/app/config/connection" // 👈 conexión directa a PostgreSQL
 import { v4 as uuidv4 } from "uuid"
 
 export async function POST(req: Request) {
@@ -13,14 +13,17 @@ export async function POST(req: Request) {
       )
     }
 
-    // 1️⃣ Buscar el school_id real desde encuesta_acceso
-    const { data: relacion, error: relacionError } = await supabase
-      .from("encuesta_acceso")
-      .select("school_id")
-      .eq("cod_mod", schoolId) // 👈 schoolId aquí es el código modular (0452011)
-      .single()
+    // 1️⃣ Buscar el school_id real desde minedu.encuesta_acceso
+    const relacionQuery = `
+      SELECT school_id
+      FROM minedu.encuesta_acceso
+      WHERE cod_mod = $1
+      LIMIT 1;
+    `
+    const relacionResult = await dbQuery(relacionQuery, [schoolId])
+    const relacion = relacionResult.rows[0]
 
-    if (relacionError || !relacion) {
+    if (!relacion) {
       return NextResponse.json(
         { error: "No se encontró el colegio en encuesta_acceso" },
         { status: 400 }
@@ -46,35 +49,39 @@ export async function POST(req: Request) {
 
     // 3️⃣ Crear el registro de participación
     const newId = uuidv4()
+    const now = new Date().toISOString()
 
-    const { error } = await supabase
-      .from("survey_participations")
-      .insert([
-        {
-          id: newId,
-          survey_id: surveyId,
-          school_id: realSchoolId, // ✅ ahora usa el ID real
-          education_level: level,
-          grade,
-          section,
-          gender,
-          started_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      ])
-
-    if (error) {
-      console.error("Error insertando en survey_participations:", error)
-      return NextResponse.json(
-        { error: "No se pudo guardar la participación" },
-        { status: 500 }
+    const insertQuery = `
+      INSERT INTO survey_participations (
+        id,
+        survey_id,
+        school_id,
+        education_level,
+        grade,
+        section,
+        gender,
+        started_at,
+        created_at,
+        updated_at
       )
-    }
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
+    `
+    await dbQuery(insertQuery, [
+      newId,
+      surveyId,
+      realSchoolId,
+      level,
+      grade,
+      section,
+      gender,
+      now,
+      now,
+      now,
+    ])
 
     return NextResponse.json({ id: newId })
   } catch (err) {
-    console.error("Error en /api/participacion:", err)
+    console.error("❌ Error en /api/participacion:", err)
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
