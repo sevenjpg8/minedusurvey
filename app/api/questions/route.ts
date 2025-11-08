@@ -1,3 +1,4 @@
+// app/api/questions/route.ts
 import { NextResponse } from "next/server";
 import { dbQuery } from "@/app/config/connection";
 
@@ -13,18 +14,32 @@ export async function GET(req: Request) {
       );
     }
 
+    const surveyMap: Record<string, number> = { primaria: 1, secundaria: 2 }
+    const surveyId = surveyMap[survey.toLowerCase()]
+    if (!surveyId) {
+      return NextResponse.json({ error: "Tipo de encuesta inválido" }, { status: 400 })
+    }
+
     // ✅ Consulta SQL usando tu schema minedu
     const query = `
       SELECT 
         id,
         text,
-        options
+        prefix,
+        type,
+        survey_id,
+        dimension_id,
+        "order"
       FROM minedu.questions
-      WHERE level = $1
+      WHERE survey_id = $1
       ORDER BY id ASC;
     `;
 
-    const result = await dbQuery(query, [survey]);
+    const result = await dbQuery(query, [surveyId]);
+
+    if (!result.rows.length) {
+      return NextResponse.json({ error: "No hay preguntas disponibles" }, { status: 404 })
+    }
 
     if (!result.rows.length) {
       return NextResponse.json(

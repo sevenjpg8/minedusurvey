@@ -1,9 +1,9 @@
+// app/encuesta/page.tsx
 "use client"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabaseClient" // tu cliente Supabase
-import Header from "@/components/header"
 import { getQuestions, Question as QuestionType } from "@/lib/getQuestions"
+import Header from "@/components/header"
 
 interface Question {
   id: number
@@ -16,10 +16,10 @@ interface Question {
   order?: number
 }
 
-
 export default function SurveyPage() {
   const router = useRouter()
-  const [questions, setQuestions] = useState<QuestionType[]>([])
+
+  const [questions, setQuestions] = useState<Question[]>([]) 
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [answers, setAnswers] = useState<Record<number, number>>({})
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
@@ -33,8 +33,10 @@ export default function SurveyPage() {
 
     const loadQuestions = async () => {
       try {
-        const data = await getQuestions(surveyId)
-        setQuestions(data)
+        // ✅ Llamada a tu nueva API
+        const res = await fetch(`/api/surveys?id=${surveyId}`)
+        const questionsData = await res.json()
+        setQuestions(questionsData)
       } catch (error) {
         console.error("Error cargando preguntas", error)
       }
@@ -42,6 +44,7 @@ export default function SurveyPage() {
 
     loadQuestions()
   }, [router])
+
 
   // Timer
   useEffect(() => {
@@ -94,21 +97,12 @@ export default function SurveyPage() {
   const handleSubmit = async () => {
     try {
       const stored = sessionStorage.getItem("surveyAccess")
-      console.log("🟦 Revisando sessionStorage...")
       if (!stored) return
 
-      let parsed
-      try {
-        parsed = JSON.parse(stored)
-      } catch (err) {
-        console.error("❌ Error parseando surveyAccess:", err, stored)
-        return
-      }
-
-      const { participationId } = parsed
+      const { participationId } = JSON.parse(stored)
       if (!participationId) return
 
-      // ✅ Recorremos las respuestas efectivas
+      // Payload para la API
       const answersPayload = Object.entries(answers).map(([questionId, optionId]) => ({
         survey_participation_id: participationId,
         question_id: Number(questionId),
@@ -121,17 +115,24 @@ export default function SurveyPage() {
       }
 
       console.log("📤 Respuestas a enviar:", answersPayload)
-      console.log(`🔢 Total de respuestas: ${answersPayload.length}`)
-      console.log(`🟩 Enviando ${answersPayload.length} respuestas en un solo INSERT...`)
 
-      const { error } = await supabase
-        .from("answers")
-        .insert(answersPayload)
+      // ✅ Enviar las respuestas al backend
+      const res = await fetch("/api/answers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(answersPayload),
+      })
 
-      if (error) throw error
-      
+      const data = await res.json()
+
+      if (!res.ok) {
+        console.error("Error guardando respuestas:", data)
+        alert("Error al guardar respuestas")
+        return
+      }
+
+      console.log("✅ Respuestas guardadas:", data)
       sessionStorage.removeItem("surveyAccess")
-
       router.push("/gracias")
 
     } catch (error) {

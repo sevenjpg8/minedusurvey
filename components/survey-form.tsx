@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "./ui/alert"
 
 interface AccessData {
   codigoModular: string
+  schoolId: number
   dre: string
   ugel: string
   institution: string
@@ -80,12 +81,20 @@ const handleSubmit = async (e: React.FormEvent) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        schoolId: accessData?.codigoModular,
+        codMod: accessData?.codigoModular,
         level: formData.level,
         grade: formData.grade,
         section: formData.section,
         gender: formData.sex,
-      }),
+      })
+    })
+
+    console.log({
+      schoolId: accessData?.schoolId,
+      level: formData.level,
+      grade: formData.grade,
+      section: formData.section,
+      gender: formData.sex,
     })
 
     const data = await res.json()
@@ -107,14 +116,13 @@ const handleSubmit = async (e: React.FormEvent) => {
     sessionStorage.setItem(
       "surveyAccess",
       JSON.stringify({
-        schoolId: accessData?.codigoModular,
-        surveyId,
+        schoolId: data.school_id,
+        surveyId: data.survey_id,
         participationId: data.id // <-- Aquí es donde va
       })
     )
-
-
-    console.log("Participación guardada:", data)
+    
+    //console.log("Participación guardada:", data)
     router.push("/encuesta")
   } catch (error) {
     console.error("Error al enviar datos:", error)
