@@ -90,8 +90,8 @@ export async function getQuestions(surveyId: number): Promise<Question[]> {
           text: opt.text,
           next_question_id: opt.next_question_id ?? null,
         }))
-      console.log("🧠 Preguntas cargadas con flujos:", questionsData)
-      console.log("🧩 Opciones cargadas:", optionsData)
+      //console.log("🧠 Preguntas cargadas con flujos:", questionsData)
+      //console.log("🧩 Opciones cargadas:", optionsData)
       return {
         id: q.id,
         text: q.text,

@@ -114,7 +114,7 @@ export default function SurveyPage() {
         return
       }
 
-      console.log("📤 Respuestas a enviar:", answersPayload)
+      //console.log("📤 Respuestas a enviar:", answersPayload)
 
       // ✅ Enviar las respuestas al backend
       const res = await fetch("/api/answers", {
@@ -131,7 +131,7 @@ export default function SurveyPage() {
         return
       }
 
-      console.log("✅ Respuestas guardadas:", data)
+      //console.log("✅ Respuestas guardadas:", data)
       sessionStorage.removeItem("surveyAccess")
       router.push("/gracias")
 

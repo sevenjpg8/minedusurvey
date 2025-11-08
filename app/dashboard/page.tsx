@@ -11,7 +11,7 @@ export default function DirectorDashboard() {
   const [accessData, setAccessData] = useState<any>(null)
 
   useEffect(() => {
-    console.log("📊 Iniciando carga del dashboard del director...")
+    //console.log("📊 Iniciando carga del dashboard del director...")
 
     const accessDataRaw = sessionStorage.getItem("accessData")
 
@@ -24,7 +24,7 @@ export default function DirectorDashboard() {
     try {
       const parsedData = JSON.parse(accessDataRaw)
       setAccessData(parsedData)
-      console.log("✅ accessData cargado correctamente:", parsedData)
+      //console.log("✅ accessData cargado correctamente:", parsedData)
     } catch (err) {
       console.error("❌ Error al parsear accessData:", err)
       router.push("/acceso")
