@@ -75,6 +75,7 @@ export async function POST(req: Request) {
       esDirector,
       data: {
         codigoModular: registro.cod_mod,
+        schoolId: registro.id,
         codigoEstudiante: registro.codigo_estudiante,
         codigoDirector: registro.codigo_director,
         dre: schoolData.dre_name ?? "SIN DRE",

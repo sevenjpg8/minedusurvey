@@ -1,16 +1,14 @@
+// app/api/participacion/route.ts
 import { NextResponse } from "next/server";
 import { dbQuery } from "@/app/config/connection";
 import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: Request) {
   try {
-    const { schoolId, level, grade, section, gender } = await req.json();
+    const { codMod, level, grade, section, gender } = await req.json();
 
-    if (!schoolId || !level || !grade || !section || !gender) {
-      return NextResponse.json(
-        { error: "Faltan datos requeridos" },
-        { status: 400 }
-      );
+    if (!codMod || !level || !grade || !section || !gender) {
+      return NextResponse.json({ error: "Faltan datos requeridos" }, { status: 400 });
     }
 
     // 1️⃣ Buscar el school_id real desde minedu.encuesta_acceso
@@ -21,7 +19,7 @@ export async function POST(req: Request) {
       LIMIT 1;
     `;
 
-    const relacionResult = await dbQuery(relacionQuery, [schoolId]);
+    const relacionResult = await dbQuery(relacionQuery, [codMod]);
 
     if (relacionResult.rows.length === 0) {
       return NextResponse.json(
@@ -66,7 +64,14 @@ export async function POST(req: Request) {
       gender,
     ]);
 
-    return NextResponse.json({ id: newId }, { status: 200 });
+    return NextResponse.json(
+      {
+        id: newId,
+        survey_id: surveyId,
+        school_id: realSchoolId,
+      },
+      { status: 200 }
+    );
   } catch (err) {
     console.error("Error en /api/participacion:", err);
     return NextResponse.json(
