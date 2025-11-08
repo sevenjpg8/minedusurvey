@@ -27,7 +27,6 @@ const dailyData = [
 export default function StatsGridImproved({ codigoDirector }: Props) {
   const [estudiantes, setEstudiantes] = useState<Dato[]>([])
   const [locales, setLocales] = useState<Dato[]>([])
-  const [encuestas, setEncuestas] = useState<Encuesta[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -59,15 +58,7 @@ export default function StatsGridImproved({ codigoDirector }: Props) {
         </div>
       </div>
     )
-
-  const processedDailyData = dailyData.map((day) => {
-    const totalEncuestasPorDia = encuestas.filter(
-      (encuesta) => encuesta.day === day.name && encuesta.school_id === codigoDirector
-    ).reduce((sum, encuesta) => sum + encuesta.cantidad, 0)
-
-    return { ...day, valor: totalEncuestasPorDia }
-  })
-
+    
   const totalEstudiantes = estudiantes.reduce((sum, e) => sum + e.valor, 0)
 
   return (
