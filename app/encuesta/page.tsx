@@ -2,13 +2,12 @@
 "use client"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { getQuestions, Question as QuestionType } from "@/lib/getQuestions"
 import Header from "@/components/header"
 
 interface Question {
   id: number
   text: string
-  options: { id: number; text: string; next_question_id?: number | null }[] // 👈 agregado
+  options: { id: number; text: string; next_question_id?: number | null }[]
   prefix?: string | null
   type?: string
   survey_id?: number
@@ -23,6 +22,7 @@ export default function SurveyPage() {
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [answers, setAnswers] = useState<Record<number, number>>({})
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
+  const [questionHistory, setQuestionHistory] = useState<number[]>([])
   const [timeLeft, setTimeLeft] = useState(300)
 
   useEffect(() => {
@@ -45,7 +45,6 @@ export default function SurveyPage() {
     loadQuestions()
   }, [router])
 
-
   // Timer
   useEffect(() => {
     const timer = setInterval(() => setTimeLeft(prev => (prev > 0 ? prev - 1 : 0)), 1000)
@@ -64,35 +63,38 @@ export default function SurveyPage() {
     setAnswers(prev => ({ ...prev, [questionId]: optionId }))
   }
 
-
   const handleNext = () => {
     const question = questions[currentQuestion]
     const selectedOptionId = answers[question.id]
     if (!selectedOptionId) return
 
     const selectedOption = question.options.find(o => o.id === selectedOptionId)
+
+    let nextIndex = -1
+
     if (selectedOption?.next_question_id) {
-      const nextIndex = questions.findIndex(q => q.id === selectedOption.next_question_id)
-      if (nextIndex !== -1) {
-        setCurrentQuestion(nextIndex)
-        setSelectedAnswer(answers[questions[nextIndex].id] ?? null)
-        return
-      }
+      nextIndex = questions.findIndex(q => q.id === selectedOption.next_question_id)
+    } else if (currentQuestion < questions.length - 1) {
+      nextIndex = currentQuestion + 1
     }
 
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1)
-      setSelectedAnswer(answers[questions[currentQuestion + 1].id] ?? null)
+    if (nextIndex !== -1) {
+      setQuestionHistory(prev => [...prev, currentQuestion])
+      setCurrentQuestion(nextIndex)
+      setSelectedAnswer(answers[questions[nextIndex].id] ?? null)
     }
   }
-
 
   const handlePrevious = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1)
-      setSelectedAnswer(answers[currentQuestion - 1] ?? null)
-    }
+    if (questionHistory.length === 0) return
+
+    const previousIndex = questionHistory[questionHistory.length - 1]
+
+    setQuestionHistory(prev => prev.slice(0, -1)) // quitar la última
+    setCurrentQuestion(previousIndex)
+    setSelectedAnswer(answers[questions[previousIndex].id] ?? null)
   }
+
 
   const handleSubmit = async () => {
     try {
@@ -114,13 +116,17 @@ export default function SurveyPage() {
         return
       }
 
-      //console.log("📤 Respuestas a enviar:", answersPayload)
+      const payload = {
+        survey_participation_id: participationId,
+        answers: answersPayload,
+      }
+
 
       // ✅ Enviar las respuestas al backend
-      const res = await fetch("/api/answers", {
+      const res = await fetch("/api/submit-survey", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(answersPayload),
+        body: JSON.stringify(payload),
       })
 
       const data = await res.json()
@@ -131,7 +137,6 @@ export default function SurveyPage() {
         return
       }
 
-      //console.log("✅ Respuestas guardadas:", data)
       sessionStorage.removeItem("surveyAccess")
       router.push("/gracias")
 
