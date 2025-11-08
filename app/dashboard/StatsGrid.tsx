@@ -15,18 +15,19 @@ interface Dato {
 }
 
 const dailyData = [
-  { name: "Lunes", valor: 45 },
-  { name: "Martes", valor: 62 },
-  { name: "Miércoles", valor: 78 },
-  { name: "Jueves", valor: 55 },
-  { name: "Viernes", valor: 89 },
-  { name: "Sábado", valor: 72 },
-  { name: "Domingo", valor: 48 },
+  { name: "Lunes", valor: 0 },
+  { name: "Martes", valor: 0 },
+  { name: "Miércoles", valor: 0 },
+  { name: "Jueves", valor: 0 },
+  { name: "Viernes", valor: 0 },
+  { name: "Sábado", valor: 0 },
+  { name: "Domingo", valor: 0 },
 ]
 
 export default function StatsGridImproved({ codigoDirector }: Props) {
   const [estudiantes, setEstudiantes] = useState<Dato[]>([])
   const [locales, setLocales] = useState<Dato[]>([])
+  const [encuestas, setEncuestas] = useState<Encuesta[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -59,8 +60,15 @@ export default function StatsGridImproved({ codigoDirector }: Props) {
       </div>
     )
 
+  const processedDailyData = dailyData.map((day) => {
+    const totalEncuestasPorDia = encuestas.filter(
+      (encuesta) => encuesta.day === day.name && encuesta.school_id === codigoDirector
+    ).reduce((sum, encuesta) => sum + encuesta.cantidad, 0)
+
+    return { ...day, valor: totalEncuestasPorDia }
+  })
+
   const totalEstudiantes = estudiantes.reduce((sum, e) => sum + e.valor, 0)
-  const totalLocales = locales.reduce((sum, l) => sum + l.valor, 0)
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50">

@@ -120,9 +120,9 @@ export default function SurveyPage() {
         return
       }
 
-      //console.log("📤 Respuestas a enviar:", answersPayload)
-      //console.log(`🔢 Total de respuestas: ${answersPayload.length}`)
-      //console.log(`🟩 Enviando ${answersPayload.length} respuestas en un solo INSERT...`)
+      console.log("📤 Respuestas a enviar:", answersPayload)
+      console.log(`🔢 Total de respuestas: ${answersPayload.length}`)
+      console.log(`🟩 Enviando ${answersPayload.length} respuestas en un solo INSERT...`)
 
       const { error } = await supabase
         .from("answers")
