@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { dbQuery } from "@/app/config/connection";
 
 export async function POST(req: Request) {
   try {
@@ -12,57 +12,62 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🔹 Verificar si el código coincide con codigo_estudiante o codigo_director
-    const { data: registro, error: registroError } = await supabase
-      .from("encuesta_acceso")
-      .select(
-        "cod_mod, school_id, education_level, codigo_estudiante, codigo_director, token"
-      )
-      .eq("cod_mod", cod_mod)
-      .or(`codigo_estudiante.eq.${codigo_estudiante},codigo_director.eq.${codigo_estudiante}`)
-      .single();
+    // ✅ 1. Buscar registro en minedu.encuesta_acceso
+    const registroQuery = `
+      SELECT 
+        cod_mod,
+        school_id,
+        education_level,
+        codigo_estudiante,
+        codigo_director,
+        token
+      FROM minedu.encuesta_acceso
+      WHERE cod_mod = $1
+      AND (codigo_estudiante = $2 OR codigo_director = $2)
+      LIMIT 1;
+    `;
 
-    if (registroError || !registro) {
+    const registroResult = await dbQuery(registroQuery, [
+      cod_mod,
+      codigo_estudiante,
+    ]);
+
+    const registro = registroResult.rows[0];
+
+    if (!registro) {
       return NextResponse.json(
         { error: "credenciales_invalidas" },
         { status: 400 }
       );
     }
 
-    // 🔹 Buscar datos del colegio (con relaciones)
-    const { data: schoolData, error: schoolError } = await supabase
-      .from("school_new")
-      .select(`
-        id,
-        name,
-        nivel_educativo,
-        ugel_new (
-          id,
-          name,
-          dres (
-            id,
-            name
-          )
-        )
-      `)
-      .eq("id", registro.school_id)
-      .single();
+    // ✅ 2. Obtener datos del colegio + ugel + dre
+    const schoolQuery = `
+      SELECT 
+        s.id,
+        s.name,
+        s.nivel_educativo,
+        u.id AS ugel_id,
+        u.name AS ugel_name,
+        d.id AS dre_id,
+        d.name AS dre_name
+      FROM minedu.school_new s
+      LEFT JOIN minedu.ugel_new u ON u.id = s.ugel_id
+      LEFT JOIN minedu.dres d ON d.id = u.dre_id
+      WHERE s.id = $1
+      LIMIT 1;
+    `;
 
-    if (schoolError || !schoolData) {
+    const schoolResult = await dbQuery(schoolQuery, [registro.school_id]);
+    const schoolData = schoolResult.rows[0];
+
+    if (!schoolData) {
       return NextResponse.json(
         { error: "No se encontró la información del colegio" },
         { status: 404 }
       );
     }
 
-    // 🔹 Acceder correctamente a los datos (arrays)
-    const ugel = Array.isArray(schoolData.ugel_new) ? schoolData.ugel_new[0] : schoolData.ugel_new;
-    const dre = ugel?.dres ? (Array.isArray(ugel.dres) ? ugel.dres[0] : ugel.dres) : null;
-
-    const ugelName = ugel?.name ?? "SIN UGEL";
-    const dreName = dre?.name ?? "SIN DRE";
-
-    // 🔹 Detectar si el código corresponde al director
     const esDirector = registro.codigo_director === codigo_estudiante;
 
     return NextResponse.json({
@@ -72,8 +77,8 @@ export async function POST(req: Request) {
         codigoModular: registro.cod_mod,
         codigoEstudiante: registro.codigo_estudiante,
         codigoDirector: registro.codigo_director,
-        dre: dreName,
-        ugel: ugelName,
+        dre: schoolData.dre_name ?? "SIN DRE",
+        ugel: schoolData.ugel_name ?? "SIN UGEL",
         institution: schoolData.name,
         level: schoolData.nivel_educativo,
         token: registro.token,
