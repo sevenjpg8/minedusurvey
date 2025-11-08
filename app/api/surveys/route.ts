@@ -3,7 +3,6 @@ import { NextResponse } from "next/server"
 import { dbQuery } from "@/app/config/connection"
 
 export async function GET(req: Request) {
-  console.log("✅ GET /api/survey llamado")
   try {
     const { searchParams } = new URL(req.url)
     const surveyId = searchParams.get("id")
