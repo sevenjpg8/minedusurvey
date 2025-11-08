@@ -1,123 +1,151 @@
-import { NextResponse } from "next/server"
-import { supabase } from "@/lib/supabaseClient"
+import { NextResponse } from "next/server";
+import { dbQuery } from "@/app/config/connection";
 
 export async function POST(req: Request) {
   try {
-    const { codigo_director } = await req.json()
+    const { codigo_director } = await req.json();
 
-    // 1️⃣ Obtener las escuelas vinculadas al director
-    const { data: escuelasRelacionadas, error: errorEscuelas } = await supabase
-      .from("encuesta_acceso")
-      .select("school_id")
-      .eq("codigo_director", codigo_director)
-
-    if (errorEscuelas) throw errorEscuelas
-    const schoolIds = escuelasRelacionadas?.map(r => r.school_id) || []
-
-    if (!schoolIds.length) {
-      return NextResponse.json({ estudiantes: [], locales: [] })
+    if (!codigo_director) {
+      return NextResponse.json(
+        { error: "Falta el código del director" },
+        { status: 400 }
+      );
     }
 
-    // 2️⃣ Estudiantes participantes
-    const { data: participaciones, error: errorPart } = await supabase
-      .from("survey_participations")
-      .select("education_level, grade, section, school_id")
-      .in("school_id", schoolIds)
+    // 1️⃣ Obtener escuelas vinculadas al director
+    const escuelasResult = await dbQuery(
+      `
+      SELECT school_id
+      FROM minedu.encuesta_acceso
+      WHERE codigo_director = $1;
+      `,
+      [codigo_director]
+    );
 
-    if (errorPart) throw errorPart
+    const schoolIds = escuelasResult.rows.map(r => r.school_id);
 
-    // 3️⃣ Obtener escuelas y sus UGEL
-    const { data: schoolsData, error: errorSchools } = await supabase
-      .from("school_new")
-      .select("id, ugel_id, nivel_educativo")
-      .in("id", schoolIds)
+    if (!schoolIds.length) {
+      return NextResponse.json({ estudiantes: [], locales: [] });
+    }
 
-    if (errorSchools) throw errorSchools
+    // 2️⃣ Participaciones de estudiantes
+    const participacionesResult = await dbQuery(
+      `
+      SELECT education_level, grade, section, school_id
+      FROM minedu.survey_participations
+      WHERE school_id = ANY($1);
+      `,
+      [schoolIds]
+    );
 
-    // Mapear school_id -> ugel_id
-    const schoolToUgel = Object.fromEntries(schoolsData.map(s => [s.id, s.ugel_id]))
+    const participaciones = participacionesResult.rows;
 
-    // Obtener DRE de los UGEL
-    const ugelIds = Array.from(new Set(schoolsData.map(s => s.ugel_id)))
-    const { data: dresData, error: errorDres } = await supabase
-      .from("ugel_new")
-      .select("id, dre_id")
-      .in("id", ugelIds)
+    // 3️⃣ Datos de escuelas
+    const schoolsDataResult = await dbQuery(
+      `
+      SELECT id, ugel_id, nivel_educativo
+      FROM minedu.school_new
+      WHERE id = ANY($1);
+      `,
+      [schoolIds]
+    );
 
-    if (errorDres) throw errorDres
+    const schoolsData = schoolsDataResult.rows;
 
-    const ugelToDre = Object.fromEntries(dresData.map(d => [d.id, d.dre_id]))
+    // Mapa school_id → ugel_id
+    const schoolToUgel: Record<number, number> = {};
+    schoolsData.forEach(s => (schoolToUgel[s.id] = s.ugel_id));
+
+    //  Obtener DRE por cada UGEL
+    const ugelIds = [...new Set(schoolsData.map(s => s.ugel_id))];
+
+    const dresResult = await dbQuery(
+      `
+      SELECT id, dre_id
+      FROM minedu.ugel_new
+      WHERE id = ANY($1);
+      `,
+      [ugelIds]
+    );
+
+    const ugelToDre: Record<number, number> = {};
+    dresResult.rows.forEach(u => (ugelToDre[u.id] = u.dre_id));
 
     // 4️⃣ Contar estudiantes por UGEL y DRE
-    const estudiantesPorUgel = new Map<number, number>()
-    const estudiantesPorDre = new Map<number, number>()
+    const estudiantesPorUgel = new Map<number, number>();
+    const estudiantesPorDre = new Map<number, number>();
 
     participaciones.forEach(p => {
-      const ugelId = schoolToUgel[p.school_id]
+      const ugelId = schoolToUgel[p.school_id];
       if (ugelId != null) {
-        estudiantesPorUgel.set(ugelId, (estudiantesPorUgel.get(ugelId) || 0) + 1)
+          estudiantesPorUgel.set(
+            ugelId,
+            (estudiantesPorUgel.get(ugelId) || 0) + 1
+          );
 
-        const dreId = ugelToDre[ugelId]
+        const dreId = ugelToDre[ugelId];
         if (dreId != null) {
-          estudiantesPorDre.set(dreId, (estudiantesPorDre.get(dreId) || 0) + 1)
+          estudiantesPorDre.set(
+            dreId,
+            (estudiantesPorDre.get(dreId) || 0) + 1
+          );
         }
       }
-    })
+    });
 
-    const totalUgelesEstudiantes = estudiantesPorUgel.size
-    const totalDresEstudiantes = estudiantesPorDre.size
+    const totalColegiosPorUgel = schoolsData.length;
 
-    // 5️⃣ Contar colegios por UGEL y DRE
-    const colegiosPorUgel = new Map<number, number>()
-    const colegiosPorDre = new Map<number, number>()
+    // 5️⃣ Totales generales estudiantes
+    const totalPrimaria = participaciones.filter(p =>
+      p.education_level.toLowerCase().includes("primaria")
+    ).length;
 
-    schoolsData.forEach(s => {
-      if (s.ugel_id != null) {
-        colegiosPorUgel.set(s.ugel_id, (colegiosPorUgel.get(s.ugel_id) || 0) + 1)
-        const dreId = ugelToDre[s.ugel_id]
-        if (dreId != null) {
-          colegiosPorDre.set(dreId, (colegiosPorDre.get(dreId) || 0) + 1)
-        }
-      }
-    })
+    const totalSecundaria = participaciones.filter(p =>
+      p.education_level.toLowerCase().includes("secundaria")
+    ).length;
 
-    const totalColegiosPorUgel = Array.from(colegiosPorUgel.values()).reduce((a, b) => a + b, 0)
-    const totalColegiosPorDre = Array.from(colegiosPorDre.values()).reduce((a, b) => a + b, 0)
-
-    // 6️⃣ Totales generales de estudiantes
-    const totalPrimaria = participaciones.filter(p => p.education_level.toLowerCase().includes("primaria")).length
-    const totalSecundaria = participaciones.filter(p => p.education_level.toLowerCase().includes("secundaria")).length
-    const totalNacional = participaciones.length
-    const totalGrados = new Set(participaciones.map(p => p.grade)).size
-    const totalSecciones = new Set(participaciones.map(p => p.section)).size
-    const totalColegios = new Set(participaciones.map(p => p.school_id)).size
+    const totalSecciones = new Set(participaciones.map(p => p.section)).size;
+    const totalGrados = new Set(participaciones.map(p => p.grade)).size;
 
     const estudiantes = [
       { nombre: "Sección", valor: totalSecciones },
       { nombre: "Grado", valor: totalGrados },
       { nombre: "Nivel Primaria", valor: totalPrimaria },
       { nombre: "Nivel Secundaria", valor: totalSecundaria },
-      // { nombre: "Local Educativo", valor: totalColegios },
-      // { nombre: "UGEL (Estudiantes)", valor: totalUgelesEstudiantes },
-      // { nombre: "DRE (Estudiantes)", valor: totalDresEstudiantes },
-      // { nombre: "Nacional", valor: totalNacional },
-    ]
+    ];
 
-    // 7️⃣ Clasificación de colegios por nivel educativo
+    // 6️⃣ Clasificación de colegios
     const soloPrimaria = schoolsData.filter(
-      s => s.nivel_educativo.toLowerCase().includes("primaria") &&
-           !s.nivel_educativo.toLowerCase().includes("secundaria")
-    ).length
+      s =>
+        s.nivel_educativo.toLowerCase().includes("primaria") &&
+        !s.nivel_educativo.toLowerCase().includes("secundaria")
+    ).length;
 
     const soloSecundaria = schoolsData.filter(
-      s => s.nivel_educativo.toLowerCase().includes("secundaria") &&
-           !s.nivel_educativo.toLowerCase().includes("primaria")
-    ).length
+      s =>
+        s.nivel_educativo.toLowerCase().includes("secundaria") &&
+        !s.nivel_educativo.toLowerCase().includes("primaria")
+    ).length;
 
     const conAmbos = schoolsData.filter(
-      s => s.nivel_educativo.toLowerCase().includes("primaria") &&
-           s.nivel_educativo.toLowerCase().includes("secundaria")
-    ).length
+      s =>
+        s.nivel_educativo.toLowerCase().includes("primaria") &&
+        s.nivel_educativo.toLowerCase().includes("secundaria")
+    ).length;
+
+    // Contar colegios por DRE
+    const colegiosPorDre = new Map<number, number>();
+    schoolsData.forEach(s => {
+      const dreId = ugelToDre[s.ugel_id];
+      if (dreId != null) {
+        colegiosPorDre.set(dreId, (colegiosPorDre.get(dreId) || 0) + 1);
+      }
+    });
+
+    const totalColegiosPorDre = [...colegiosPorDre.values()].reduce(
+      (a, b) => a + b,
+      0
+    );
 
     const locales = [
       { nombre: "Solo primaria", valor: soloPrimaria },
@@ -125,11 +153,11 @@ export async function POST(req: Request) {
       { nombre: "Con primaria y secundaria", valor: conAmbos },
       { nombre: "Colegios a nivel UGEL", valor: totalColegiosPorUgel },
       { nombre: "Colegios a nivel DRE", valor: totalColegiosPorDre },
-    ]
+    ];
 
-    return NextResponse.json({ estudiantes, locales })
+    return NextResponse.json({ estudiantes, locales });
   } catch (err: any) {
-    console.error("❌ Error en dashboard:", err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    console.error("❌ Error en dashboard:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
