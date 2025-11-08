@@ -34,13 +34,15 @@ export async function GET(req: Request) {
       SELECT 
         q.id AS question_id,
         q.text AS question_text,
+        q.prefix AS question_prefix,
         q.type AS question_type,
         o.id AS option_id,
-        o.text AS option_text
+        o.text AS option_text,
+        o.next_question_id
       FROM minedu.questions q
       LEFT JOIN minedu.options o ON o.question_id = q.id
       WHERE q.survey_id = $1
-      ORDER BY q.order ASC, o.id ASC;
+      ORDER BY q."order" ASC, o.id ASC;
     `;
 
     const result = await dbQuery(query, [finalSurveyId])
@@ -54,6 +56,7 @@ export async function GET(req: Request) {
             id: row.question_id,
             text: row.question_text,
             type: row.question_type,
+            prefix: row.question_prefix,
             options: [],
           }
         }
@@ -61,6 +64,7 @@ export async function GET(req: Request) {
           acc[row.question_id].options.push({
             id: row.option_id,
             text: row.option_text,
+            next_question_id: row.next_question_id,
           })
         }
         return acc

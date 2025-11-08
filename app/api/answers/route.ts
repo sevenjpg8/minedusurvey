@@ -18,10 +18,10 @@ export async function POST(req: Request) {
         .join(",")
 
     const params = answers.flatMap((a) => [
-        a.survey_participation_id, // UUID
-        a.question_id,             // integer
-        Number(a.option_id),       // integer
-        a.value ?? null,           // nullable
+        a.survey_participation_id,
+        a.question_id,
+        Number(a.option_id),
+        a.value ?? null,
         now,
     ])
 
