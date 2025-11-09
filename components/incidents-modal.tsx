@@ -32,16 +32,34 @@ export default function IncidentsModal({ isOpen, onClose }: IncidentsModalProps)
     setSelectedIncidents((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]))
   }
 
-  const handleSubmit = () => {
-    console.log(
-      "Incidencias seleccionadas:",
-      selectedIncidents.map((i) => incidents[i]),
-    )
+const handleSubmit = async () => {
+  const incidenciasSeleccionadas = selectedIncidents.map((i) => incidents[i])
+
+  try {
+    const response = await fetch("/api/incidents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ incidencias: incidenciasSeleccionadas }),
+    })
+
+    if (!response.ok) {
+      const data = await response.json()
+      console.error("Error:", data.error)
+      alert("Hubo un problema al registrar las incidencias.")
+      return
+    }
+
+    console.log("Incidencias guardadas correctamente")
     setSubmitted(true)
     setTimeout(() => {
       handleReset()
     }, 2000)
+  } catch (error) {
+    console.error("Error al enviar incidencias:", error)
+    alert("Error de conexión con el servidor.")
   }
+}
+
 
   const handleReset = () => {
     setSelectedIncidents([])
