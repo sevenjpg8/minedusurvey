@@ -33,13 +33,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ estudiantes: [], locales: [], avanceDiario: [] });
     }
 
-    // 2️⃣ Participaciones de estudiantes
+    // 2️⃣ Participaciones de estudiantes (solo completados)
     const participacionesResult = await dbQuery(
       `
-      SELECT education_level, grade, section, school_id
-      FROM minedu.survey_participations
-      WHERE school_id = ANY($1);
-      `,
+  SELECT education_level, grade, section, school_id, completed_at
+  FROM minedu.survey_participations
+  WHERE school_id = ANY($1)
+    AND completed_at IS NOT NULL;
+  `,
       [schoolIds]
     );
 
@@ -181,23 +182,23 @@ export async function POST(req: Request) {
     ];
 
     // Traducción de días ingles → español
-const traduccionDias: Record<string, string> = {
-  monday: "Lunes",
-  tuesday: "Martes",
-  wednesday: "Miércoles",
-  thursday: "Jueves",
-  friday: "Viernes",
-  saturday: "Sábado",
-  sunday: "Domingo",
-};
+    const traduccionDias: Record<string, string> = {
+      monday: "Lunes",
+      tuesday: "Martes",
+      wednesday: "Miércoles",
+      thursday: "Jueves",
+      friday: "Viernes",
+      saturday: "Sábado",
+      sunday: "Domingo",
+    };
 
-const conteosPorDia = diasOrdenados.map((dia) => {
-  const encontrado = avanceDiarioResult.rows.find((r) => {
-    const diaEnEspañol = traduccionDias[r.dia.trim().toLowerCase()];
-    return diaEnEspañol === dia;
-  });
-  return { name: dia, valor: encontrado ? Number(encontrado.cantidad) : 0 };
-});
+    const conteosPorDia = diasOrdenados.map((dia) => {
+      const encontrado = avanceDiarioResult.rows.find((r) => {
+        const diaEnEspañol = traduccionDias[r.dia.trim().toLowerCase()];
+        return diaEnEspañol === dia;
+      });
+      return { name: dia, valor: encontrado ? Number(encontrado.cantidad) : 0 };
+    });
 
     console.log("✅ Conteos finales por día:", conteosPorDia);
 
