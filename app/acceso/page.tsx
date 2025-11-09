@@ -54,7 +54,9 @@ export default function AccesoPage() {
       setLoading(false)
 
       if (!response.ok) {
-        if (result.error === "codigo_modular_invalido") {
+        if (result.error === "encuesta_cerrada") {
+          setError("El acceso a esta encuesta ha sido cerrado")
+        } else if (result.error === "codigo_modular_invalido") {
           setError("El código modular es incorrecto")
         } else if (result.error === "codigo_acceso_invalido") {
           setError("El código de acceso es incorrecto")

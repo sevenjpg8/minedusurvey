@@ -20,6 +20,7 @@ export async function POST(req: Request) {
         education_level,
         codigo_estudiante,
         codigo_director,
+        estado,
         token
       FROM minedu.encuesta_acceso
       WHERE cod_mod = $1
@@ -40,6 +41,14 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    if (registro.estado === false) {
+      return NextResponse.json(
+        { error: "encuesta_cerrada" },
+        { status: 403 }
+      );
+    }
+
 
     // ✅ 2. Obtener datos del colegio + ugel + dre
     const schoolQuery = `
