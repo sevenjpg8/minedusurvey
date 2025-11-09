@@ -132,15 +132,15 @@ export default function StatsGrid({ codigoDirector }: Props) {
             <CardHeader className="border-b-2 border-blue-100 pb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
               <div className="flex items-center gap-3">
                 <div className="w-1 h-6 bg-blue-600 rounded-full" />
-                <CardTitle className="text-blue-900 text-xl">II. Avance Diario de Encuestas</CardTitle>
+                <CardTitle className="text-gray-900 text-xl">II. Avance Diario de Encuestas</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="pt-6">
               <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={avanceDiario.length ? avanceDiario : dailyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0e7ff" />
-                  <XAxis dataKey="name" stroke="#4f46e5" />
-                  <YAxis stroke="#4f46e5" />
+                  <XAxis dataKey="name" stroke="#000000ff" />
+                  <YAxis stroke="#000000ff" />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "#ffffff",
@@ -149,7 +149,7 @@ export default function StatsGrid({ codigoDirector }: Props) {
                     }}
                     labelStyle={{ color: "#1e40af" }}
                   />
-                  <Bar dataKey="valor" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="valor" fill="#f63b3bff" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

@@ -18,7 +18,7 @@ interface Question {
 export default function SurveyPage() {
   const router = useRouter()
 
-  const [questions, setQuestions] = useState<Question[]>([]) 
+  const [questions, setQuestions] = useState<Question[]>([])
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [answers, setAnswers] = useState<Record<number, number>>({})
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
@@ -168,10 +168,11 @@ export default function SurveyPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-gray-700">
-                Pregunta {currentQuestion + 1} de {questions.length}
+                {Math.round(((currentQuestion + 1) / questions.length) * 100)}%
               </span>
               <div className="w-3 h-3 bg-red-600 rounded-full"></div>
             </div>
+
             {/* <span className="text-lg font-semibold text-gray-700">{formatTime(timeLeft)}</span> */}
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -203,8 +204,8 @@ export default function SurveyPage() {
                 key={option.id}
                 onClick={() => handleSelectAnswer(option.id)}
                 className={`p-4 rounded-lg font-semibold transition-all ${selectedAnswer === option.id
-                    ? "bg-blue-900 text-white shadow-md scale-105 cursor-pointer"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
+                  ? "bg-blue-900 text-white shadow-md scale-105 cursor-pointer"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
                   }`}
               >
                 {option.text}
@@ -217,8 +218,8 @@ export default function SurveyPage() {
               onClick={handlePrevious}
               disabled={currentQuestion === 0}
               className={`px-6 py-3 rounded-lg font-semibold transition-colors ${currentQuestion === 0
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-gray-400 text-white hover:bg-gray-500 cursor-pointer"
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-gray-400 text-white hover:bg-gray-500 cursor-pointer"
                 }`}
             >
               Anterior
