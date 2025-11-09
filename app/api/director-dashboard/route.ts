@@ -5,6 +5,8 @@ export async function POST(req: Request) {
   try {
     const { codigo_director } = await req.json();
 
+    console.log("📩 Recibido codigo_director:", codigo_director);
+
     if (!codigo_director) {
       return NextResponse.json(
         { error: "Falta el código del director" },
@@ -22,21 +24,27 @@ export async function POST(req: Request) {
       [codigo_director]
     );
 
-    const schoolIds = escuelasResult.rows.map(r => r.school_id);
+    console.log("🏫 Escuelas encontradas:", escuelasResult.rows);
+
+    const schoolIds = escuelasResult.rows.map((r) => r.school_id);
 
     if (!schoolIds.length) {
-      return NextResponse.json({ estudiantes: [], locales: [] });
+      console.log("⚠️ No hay escuelas asociadas al director.");
+      return NextResponse.json({ estudiantes: [], locales: [], avanceDiario: [] });
     }
 
-    // 2️⃣ Participaciones de estudiantes
+    // 2️⃣ Participaciones de estudiantes (solo completados)
     const participacionesResult = await dbQuery(
       `
-      SELECT education_level, grade, section, school_id
-      FROM minedu.survey_participations
-      WHERE school_id = ANY($1);
-      `,
+  SELECT education_level, grade, section, school_id, completed_at
+  FROM minedu.survey_participations
+  WHERE school_id = ANY($1)
+    AND completed_at IS NOT NULL;
+  `,
       [schoolIds]
     );
+
+    console.log("🎓 Participaciones encontradas:", participacionesResult.rows.length);
 
     const participaciones = participacionesResult.rows;
 
@@ -54,10 +62,10 @@ export async function POST(req: Request) {
 
     // Mapa school_id → ugel_id
     const schoolToUgel: Record<number, number> = {};
-    schoolsData.forEach(s => (schoolToUgel[s.id] = s.ugel_id));
+    schoolsData.forEach((s) => (schoolToUgel[s.id] = s.ugel_id));
 
-    //  Obtener DRE por cada UGEL
-    const ugelIds = [...new Set(schoolsData.map(s => s.ugel_id))];
+    // Obtener DRE por cada UGEL
+    const ugelIds = [...new Set(schoolsData.map((s) => s.ugel_id))];
 
     const dresResult = await dbQuery(
       `
@@ -69,26 +77,20 @@ export async function POST(req: Request) {
     );
 
     const ugelToDre: Record<number, number> = {};
-    dresResult.rows.forEach(u => (ugelToDre[u.id] = u.dre_id));
+    dresResult.rows.forEach((u) => (ugelToDre[u.id] = u.dre_id));
 
     // 4️⃣ Contar estudiantes por UGEL y DRE
     const estudiantesPorUgel = new Map<number, number>();
     const estudiantesPorDre = new Map<number, number>();
 
-    participaciones.forEach(p => {
+    participaciones.forEach((p) => {
       const ugelId = schoolToUgel[p.school_id];
       if (ugelId != null) {
-          estudiantesPorUgel.set(
-            ugelId,
-            (estudiantesPorUgel.get(ugelId) || 0) + 1
-          );
+        estudiantesPorUgel.set(ugelId, (estudiantesPorUgel.get(ugelId) || 0) + 1);
 
         const dreId = ugelToDre[ugelId];
         if (dreId != null) {
-          estudiantesPorDre.set(
-            dreId,
-            (estudiantesPorDre.get(dreId) || 0) + 1
-          );
+          estudiantesPorDre.set(dreId, (estudiantesPorDre.get(dreId) || 0) + 1);
         }
       }
     });
@@ -96,16 +98,16 @@ export async function POST(req: Request) {
     const totalColegiosPorUgel = schoolsData.length;
 
     // 5️⃣ Totales generales estudiantes
-    const totalPrimaria = participaciones.filter(p =>
+    const totalPrimaria = participaciones.filter((p) =>
       p.education_level.toLowerCase().includes("primaria")
     ).length;
 
-    const totalSecundaria = participaciones.filter(p =>
+    const totalSecundaria = participaciones.filter((p) =>
       p.education_level.toLowerCase().includes("secundaria")
     ).length;
 
-    const totalSecciones = new Set(participaciones.map(p => p.section)).size;
-    const totalGrados = new Set(participaciones.map(p => p.grade)).size;
+    const totalSecciones = new Set(participaciones.map((p) => p.section)).size;
+    const totalGrados = new Set(participaciones.map((p) => p.grade)).size;
 
     const estudiantes = [
       { nombre: "Sección", valor: totalSecciones },
@@ -116,36 +118,32 @@ export async function POST(req: Request) {
 
     // 6️⃣ Clasificación de colegios
     const soloPrimaria = schoolsData.filter(
-      s =>
+      (s) =>
         s.nivel_educativo.toLowerCase().includes("primaria") &&
         !s.nivel_educativo.toLowerCase().includes("secundaria")
     ).length;
 
     const soloSecundaria = schoolsData.filter(
-      s =>
+      (s) =>
         s.nivel_educativo.toLowerCase().includes("secundaria") &&
         !s.nivel_educativo.toLowerCase().includes("primaria")
     ).length;
 
     const conAmbos = schoolsData.filter(
-      s =>
+      (s) =>
         s.nivel_educativo.toLowerCase().includes("primaria") &&
         s.nivel_educativo.toLowerCase().includes("secundaria")
     ).length;
 
-    // Contar colegios por DRE
     const colegiosPorDre = new Map<number, number>();
-    schoolsData.forEach(s => {
+    schoolsData.forEach((s) => {
       const dreId = ugelToDre[s.ugel_id];
       if (dreId != null) {
         colegiosPorDre.set(dreId, (colegiosPorDre.get(dreId) || 0) + 1);
       }
     });
 
-    const totalColegiosPorDre = [...colegiosPorDre.values()].reduce(
-      (a, b) => a + b,
-      0
-    );
+    const totalColegiosPorDre = [...colegiosPorDre.values()].reduce((a, b) => a + b, 0);
 
     const locales = [
       { nombre: "Solo primaria", valor: soloPrimaria },
@@ -155,7 +153,56 @@ export async function POST(req: Request) {
       { nombre: "Colegios a nivel DRE", valor: totalColegiosPorDre },
     ];
 
-    return NextResponse.json({ estudiantes, locales });
+    // 7️⃣ Avance diario de encuestas completadas
+    const avanceDiarioResult = await dbQuery(
+      `
+      SELECT
+        TO_CHAR(completed_at, 'TMDay') AS dia,
+        COUNT(*) AS cantidad
+      FROM minedu.survey_participations
+      WHERE school_id = ANY($1)
+        AND completed_at IS NOT NULL
+        AND completed_at >= NOW() - INTERVAL '7 days'
+      GROUP BY dia, EXTRACT(DOW FROM completed_at)
+      ORDER BY EXTRACT(DOW FROM completed_at);
+      `,
+      [schoolIds]
+    );
+
+    console.log("📊 Resultados avance diario:", avanceDiarioResult.rows);
+
+    const diasOrdenados = [
+      "Lunes",
+      "Martes",
+      "Miércoles",
+      "Jueves",
+      "Viernes",
+      "Sábado",
+      "Domingo",
+    ];
+
+    // Traducción de días ingles → español
+    const traduccionDias: Record<string, string> = {
+      monday: "Lunes",
+      tuesday: "Martes",
+      wednesday: "Miércoles",
+      thursday: "Jueves",
+      friday: "Viernes",
+      saturday: "Sábado",
+      sunday: "Domingo",
+    };
+
+    const conteosPorDia = diasOrdenados.map((dia) => {
+      const encontrado = avanceDiarioResult.rows.find((r) => {
+        const diaEnEspañol = traduccionDias[r.dia.trim().toLowerCase()];
+        return diaEnEspañol === dia;
+      });
+      return { name: dia, valor: encontrado ? Number(encontrado.cantidad) : 0 };
+    });
+
+    console.log("✅ Conteos finales por día:", conteosPorDia);
+
+    return NextResponse.json({ estudiantes, locales, avanceDiario: conteosPorDia });
   } catch (err: any) {
     console.error("❌ Error en dashboard:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
