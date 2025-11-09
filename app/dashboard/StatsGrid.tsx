@@ -26,6 +26,7 @@ const dailyData = [
 
 export default function StatsGridImproved({ codigoDirector }: Props) {
   const [estudiantes, setEstudiantes] = useState<Dato[]>([])
+  const [avanceDiario, setAvanceDiario] = useState<Dato[]>([])
   const [locales, setLocales] = useState<Dato[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -40,6 +41,7 @@ export default function StatsGridImproved({ codigoDirector }: Props) {
         const data = await res.json()
         setEstudiantes(data.estudiantes || [])
         setLocales(data.locales || [])
+        setAvanceDiario(data.avanceDiario || [])
       } catch (err) {
         console.error("Error al cargar:", err)
       } finally {
@@ -133,7 +135,7 @@ export default function StatsGridImproved({ codigoDirector }: Props) {
             </CardHeader>
             <CardContent className="pt-6">
               <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={dailyData}>
+                <BarChart data={avanceDiario.length ? avanceDiario : dailyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0e7ff" />
                   <XAxis dataKey="name" stroke="#4f46e5" />
                   <YAxis stroke="#4f46e5" />
