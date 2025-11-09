@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react"
 import { Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import IncidentsModal from "@/components/incidents-modal"
 
 interface Props {
   codigoDirector: string
@@ -24,11 +26,12 @@ const dailyData = [
   { name: "Domingo", valor: 0 },
 ]
 
-export default function StatsGridImproved({ codigoDirector }: Props) {
+export default function StatsGrid({ codigoDirector }: Props) {
   const [estudiantes, setEstudiantes] = useState<Dato[]>([])
   const [avanceDiario, setAvanceDiario] = useState<Dato[]>([])
   const [locales, setLocales] = useState<Dato[]>([])
   const [loading, setLoading] = useState(true)
+  const [isIncidentsModalOpen, setIsIncidentsModalOpen] = useState(false)
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -60,13 +63,12 @@ export default function StatsGridImproved({ codigoDirector }: Props) {
         </div>
       </div>
     )
-    
+
   const totalEstudiantes = estudiantes.reduce((sum, e) => sum + e.valor, 0)
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50">
-      {/* Header Section */}
-            <div
+      <div
         className="border-b-2 border-blue-200 sticky top-0 z-50 shadow-lg"
         style={{ backgroundColor: "rgb(0, 51, 102)" }}
       >
@@ -152,9 +154,21 @@ export default function StatsGridImproved({ codigoDirector }: Props) {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-          
+
+          {/* Incidencias Table */}
+          <div className="flex justify-center pt-6">
+            <Button
+              onClick={() => setIsIncidentsModalOpen(true)}
+              className="bg-blue-700 hover:bg-blue-800 text-white px-12 py-5 text-xl font-bold tracking-wide shadow-lg rounded-2xl"
+            >
+              🚨 Reportar Incidencia
+            </Button>
+          </div>
+
         </div>
       </div>
+
+      <IncidentsModal isOpen={isIncidentsModalOpen} onClose={() => setIsIncidentsModalOpen(false)} />
     </main>
   )
 }
