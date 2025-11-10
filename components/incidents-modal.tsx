@@ -29,37 +29,38 @@ export default function IncidentsModal({ isOpen, onClose }: IncidentsModalProps)
   const [submitted, setSubmitted] = useState(false)
 
   const handleToggleIncident = (index: number) => {
-    setSelectedIncidents((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]))
+    setSelectedIncidents((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    )
   }
 
-const handleSubmit = async () => {
-  const incidenciasSeleccionadas = selectedIncidents.map((i) => incidents[i])
+  const handleSubmit = async () => {
+    const incidenciasSeleccionadas = selectedIncidents.map((i) => incidents[i])
 
-  try {
-    const response = await fetch("/api/incidents", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ incidencias: incidenciasSeleccionadas }),
-    })
+    try {
+      const response = await fetch("/api/incidents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ incidencias: incidenciasSeleccionadas }),
+      })
 
-    if (!response.ok) {
-      const data = await response.json()
-      console.error("Error:", data.error)
-      alert("Hubo un problema al registrar las incidencias.")
-      return
+      if (!response.ok) {
+        const data = await response.json()
+        console.error("Error:", data.error)
+        alert("Hubo un problema al registrar las incidencias.")
+        return
+      }
+
+      console.log("Incidencias guardadas correctamente")
+      setSubmitted(true)
+      setTimeout(() => {
+        handleReset()
+      }, 2000)
+    } catch (error) {
+      console.error("Error al enviar incidencias:", error)
+      alert("Error de conexión con el servidor.")
     }
-
-    console.log("Incidencias guardadas correctamente")
-    setSubmitted(true)
-    setTimeout(() => {
-      handleReset()
-    }, 2000)
-  } catch (error) {
-    console.error("Error al enviar incidencias:", error)
-    alert("Error de conexión con el servidor.")
   }
-}
-
 
   const handleReset = () => {
     setSelectedIncidents([])
@@ -72,9 +73,20 @@ const handleSubmit = async () => {
   if (submitted) {
     return (
       <div className="fixed inset-0 bg-[rgba(0,0,0,0.50)] flex items-center justify-center p-4 z-50">
-        <Card className="w-full max-w-2xl text-center p-8 bg-white">
+        <Card className="w-full max-w-2xl text-center p-8 bg-white relative">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition"
+          >
+            <X className="w-5 h-5" />
+          </button>
           <div className="mb-6">
-            <svg className="mx-auto h-16 w-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="mx-auto h-16 w-16 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
@@ -93,9 +105,17 @@ const handleSubmit = async () => {
   return (
     <div className="fixed inset-0 bg-[rgba(0,0,0,0.50)] flex items-center justify-center p-4 z-50">
       <Card
-        className="w-full max-w-4xl bg-white shadow-2xl my-8 max-h-300 flex flex-col border-0 border-t-4"
+        className="w-full max-w-4xl bg-white shadow-2xl my-8 max-h-300 flex flex-col border-0 border-t-4 relative"
         style={{ borderTopColor: "rgb(0, 51, 102)" }}
       >
+        {/* Botón X para cerrar */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition"
+          aria-label="Cerrar"
+        >
+          <X className="w-5 h-5" />
+        </button>
 
         <div className="p-8 overflow-y-auto flex-1">
           <div className="mb-8">
