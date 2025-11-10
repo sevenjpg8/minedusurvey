@@ -5,8 +5,6 @@ export async function POST(req: Request) {
   try {
     const { codigo_director } = await req.json();
 
-    console.log("📩 Recibido codigo_director:", codigo_director);
-
     if (!codigo_director) {
       return NextResponse.json(
         { error: "Falta el código del director" },
@@ -24,16 +22,13 @@ export async function POST(req: Request) {
       [codigo_director]
     );
 
-    console.log("🏫 Escuelas encontradas:", escuelasResult.rows);
 
     const schoolIds = escuelasResult.rows.map((r) => r.school_id);
 
     if (!schoolIds.length) {
-      console.log("⚠️ No hay escuelas asociadas al director.");
       return NextResponse.json({ estudiantes: [], locales: [], avanceDiario: [] });
     }
 
-    // 2️⃣ Participaciones de estudiantes (solo completados)
     const participacionesResult = await dbQuery(
       `
   SELECT education_level, grade, section, school_id, completed_at
@@ -44,11 +39,9 @@ export async function POST(req: Request) {
       [schoolIds]
     );
 
-    console.log("🎓 Participaciones encontradas:", participacionesResult.rows.length);
 
     const participaciones = participacionesResult.rows;
 
-    // 3️⃣ Datos de escuelas
     const schoolsDataResult = await dbQuery(
       `
       SELECT id, ugel_id, nivel_educativo
@@ -79,7 +72,6 @@ export async function POST(req: Request) {
     const ugelToDre: Record<number, number> = {};
     dresResult.rows.forEach((u) => (ugelToDre[u.id] = u.dre_id));
 
-    // 4️⃣ Contar estudiantes por UGEL y DRE
     const estudiantesPorUgel = new Map<number, number>();
     const estudiantesPorDre = new Map<number, number>();
 
@@ -153,7 +145,6 @@ export async function POST(req: Request) {
       { nombre: "Colegios a nivel DRE", valor: totalColegiosPorDre },
     ];
 
-    // 7️⃣ Avance diario de encuestas completadas
     const avanceDiarioResult = await dbQuery(
       `
       SELECT
@@ -168,8 +159,6 @@ export async function POST(req: Request) {
       `,
       [schoolIds]
     );
-
-    console.log("📊 Resultados avance diario:", avanceDiarioResult.rows);
 
     const diasOrdenados = [
       "Lunes",
@@ -199,8 +188,6 @@ export async function POST(req: Request) {
       });
       return { name: dia, valor: encontrado ? Number(encontrado.cantidad) : 0 };
     });
-
-    console.log("✅ Conteos finales por día:", conteosPorDia);
 
     return NextResponse.json({ estudiantes, locales, avanceDiario: conteosPorDia });
   } catch (err: any) {

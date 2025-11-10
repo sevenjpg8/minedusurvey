@@ -70,17 +70,18 @@ export default function AccesoPage() {
 
       sessionStorage.setItem("accessData", JSON.stringify(result.data))
 
+      document.cookie = `accessData=${encodeURIComponent(JSON.stringify({
+        codigoEstudiante: result.data.codigoEstudiante,
+        codigoDirector: result.data.codigoDirector,
+        esDirector: result.esDirector,
+        completed: false // o true si ya completó encuesta
+      }))}; path=/`;
+
       if (result.esDirector) {
-        // Director → cookie con codigoDirector
-        document.cookie = `accessData=${encodeURIComponent(JSON.stringify({ codigoDirector: result.data.codigoDirector }))}; path=/`;
-        router.push("/dashboard"); // pasa por el proxy
+        router.push("/dashboard");
       } else {
-        // Estudiante → cookie con codigoEstudiante
-        document.cookie = `accessData=${encodeURIComponent(JSON.stringify({ codigoEstudiante: result.data.codigoEstudiante }))}; path=/`;
         router.push("/identificacion");
       }
-
-
 
     } catch (err) {
       console.error(err)

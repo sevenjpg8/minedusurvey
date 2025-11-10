@@ -11,20 +11,23 @@ export default function DirectorDashboard() {
   const [accessData, setAccessData] = useState<any>(null)
 
   useEffect(() => {
-    //console.log("📊 Iniciando carga del dashboard del director...")
 
     const accessDataRaw = sessionStorage.getItem("accessData")
 
     if (!accessDataRaw) {
-      console.warn("⚠️ No se encontró accessData en localStorage.")
       router.push("/acceso")
       return
     }
 
     try {
       const parsedData = JSON.parse(accessDataRaw)
+
+      if (!parsedData.esDirector) {
+        router.push("/acceso");
+        return;
+      }
+
       setAccessData(parsedData)
-      //console.log("✅ accessData cargado correctamente:", parsedData)
     } catch (err) {
       console.error("❌ Error al parsear accessData:", err)
       router.push("/acceso")
