@@ -5,9 +5,7 @@ export default function proxy(req: NextRequest) {
   const url = req.nextUrl;
   const pathname = url.pathname;
 
-  // ================================
   // GET COOKIES
-  // ================================
   const cookieRaw = req.cookies.get("accessData")?.value;
   let accessData = null;
 
@@ -17,9 +15,7 @@ export default function proxy(req: NextRequest) {
     accessData = null;
   }
 
-  // ================================
   // COOKIE lastRoute (última ruta válida)
-  // ================================
   const lastRoute = req.cookies.get("lastRoute")?.value || pathname;
 
   // Detectar si el usuario cambió la URL manualmente
@@ -36,9 +32,7 @@ export default function proxy(req: NextRequest) {
     return res;
   };
 
-  // ================================
   // RUTAS PUBLICAS
-  // ================================
   const publicPaths = ["/acceso", "/api/validar"];
   if (publicPaths.includes(pathname)) {
     if (!accessData) return next();
@@ -62,18 +56,14 @@ export default function proxy(req: NextRequest) {
     }
   }
 
-  // ================================
   // SI NO ESTA LOGEADO → SOLO /acceso
-  // ================================
   if (!accessData) {
     const redirect = NextResponse.redirect(new URL("/acceso", req.url));
     redirect.cookies.set("lastRoute", "/acceso");
     return redirect;
   }
 
-  // ================================
   // ENCUESTA COMPLETADA → SOLO /gracias
-  // ================================
   if (accessData.completed) {
     if (pathname !== "/gracias") {
       const redirect = NextResponse.redirect(new URL("/gracias", req.url));
@@ -83,9 +73,7 @@ export default function proxy(req: NextRequest) {
     return next();
   }
 
-  // ================================
   // DIRECTOR → solo puede acceder a /dashboard
-  // ================================
   if (accessData.esDirector) {
     if (!pathname.startsWith("/dashboard")) {
       const redirect = NextResponse.redirect(new URL("/dashboard", req.url));
@@ -95,9 +83,7 @@ export default function proxy(req: NextRequest) {
     return next();
   }
 
-  // ================================
   // ESTUDIANTE → solo puede acceder a /identificacion o /encuesta
-  // ================================
   if (accessData.codigoEstudiante) {
     const studentFlow = ["/identificacion", "/encuesta"];
     if (!studentFlow.some((p) => pathname.startsWith(p))) {
@@ -108,8 +94,6 @@ export default function proxy(req: NextRequest) {
     return next();
   }
 
-  // ================================
   // POR DEFECTO
-  // ================================
   return next();
 }

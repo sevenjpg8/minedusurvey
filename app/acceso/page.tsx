@@ -68,13 +68,20 @@ export default function AccesoPage() {
 
       // Dentro de handleSubmit, reemplaza la parte del router.push por esto 👇
 
-      sessionStorage.setItem("accessData", JSON.stringify(result.data))
+      sessionStorage.setItem(
+        "accessData",
+        JSON.stringify({
+          ...result.data,
+          esDirector: result.esDirector
+        })
+      )
+
 
       document.cookie = `accessData=${encodeURIComponent(JSON.stringify({
         codigoEstudiante: result.data.codigoEstudiante,
         codigoDirector: result.data.codigoDirector,
-        esDirector: result.esDirector,
-        completed: false // o true si ya completó encuesta
+        esDirector: result.data.esDirector, // ahora sí existe
+        completed: result.data.completed
       }))}; path=/`;
 
       if (result.esDirector) {
