@@ -150,7 +150,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     <Card className="w-full max-w-2xl bg-white shadow-lg">
       <div className="p-8">
         <div className="flex justify-center mb-8">
-          <img src="/logo-minedu.png" alt="Ministerio de Educación" className="h-16 object-contain" />
+          <img src="/logo-minedu.webp" alt="Ministerio de Educación" className="h-16 object-contain" />
         </div>
 
         {/* Title */}

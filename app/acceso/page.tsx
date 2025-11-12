@@ -107,7 +107,7 @@ export default function AccesoPage() {
             {/* Logo */}
             <div className="flex justify-center mb-8">
               <img
-                src="/logo-minedu.png"
+                src="/logo-minedu.webp"
                 alt="Ministerio de Educación"
                 className="h-16 object-contain"
               />
