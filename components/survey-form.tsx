@@ -112,7 +112,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       surveyId = 2
     }
 
-    // 🔹 Guardar datos en sessionStorage para usarlos en /encuesta
+    // 🔹 Guardar datos en sessionStorage para usarlos en /formulario
     sessionStorage.setItem(
       "surveyAccess",
       JSON.stringify({
@@ -123,7 +123,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     )
     
     //console.log("Participación guardada:", data)
-    router.push("/encuesta")
+    router.push("/formulario")
   } catch (error) {
     console.error("Error al enviar datos:", error)
     alert("Error al guardar la participación")

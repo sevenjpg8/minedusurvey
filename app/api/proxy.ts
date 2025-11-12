@@ -83,9 +83,9 @@ export default function proxy(req: NextRequest) {
     return next();
   }
 
-  // ESTUDIANTE → solo puede acceder a /identificacion - /encuesta
+  // ESTUDIANTE → solo puede acceder a /identificacion - /formulario
   if (accessData.codigoEstudiante) {
-    const studentFlow = ["/identificacion", "/encuesta"];
+    const studentFlow = ["/identificacion", "/formulario"];
     if (!studentFlow.some((p) => pathname.startsWith(p))) {
       const redirect = NextResponse.redirect(new URL("/identificacion", req.url));
       redirect.cookies.set("lastRoute", "/identificacion");

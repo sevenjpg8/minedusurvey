@@ -1,4 +1,4 @@
-// app/encuesta/page.tsx
+// app/formulario/page.tsx
 "use client"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
