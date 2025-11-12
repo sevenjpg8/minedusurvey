@@ -10,7 +10,7 @@ export default function Video() {
       {!isPlaying ? (
         <div
           className="w-full h-full bg-cover bg-center cursor-pointer"
-          style={{ backgroundImage: "url('https://img.youtube.com/vi/FrZUjHeI6xI/hqdefault.jpg')" }}
+          style={{  backgroundImage: "url('https://img.youtube.com/vi/p8NIhXMrTRo/hqdefault.jpg')" }}
           onClick={() => setIsPlaying(true)}
         >
           <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -23,7 +23,7 @@ export default function Video() {
         <iframe
           width="100%"
           height="400"
-          src="https://www.youtube.com/embed/FrZUjHeI6xI?autoplay=1"
+          src="https://www.youtube.com/embed/p8NIhXMrTRo?autoplay=1"
           title="Descubre el secreto mejor guardado del Minedu"
           frameBorder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
