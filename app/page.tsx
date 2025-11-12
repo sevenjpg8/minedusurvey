@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Header from "@/components/header"
+import Video from "@/components/video"
 
 export default function Home() {
   const router = useRouter()
@@ -25,16 +26,7 @@ export default function Home() {
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
           {/* Video Container */}
           <div className="mb-8 rounded-lg overflow-hidden">
-            <iframe
-              width="100%"
-              height="400"
-              src="https://www.youtube.com/embed/FrZUjHeI6xI"
-              title="Descubre el secreto mejor guardado del Minedu"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full"
-            ></iframe>
+           <Video />
           </div>
 
           {/* Title */}

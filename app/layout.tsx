@@ -12,9 +12,8 @@ export const metadata: Metadata = {
   description: "Participa en la Encuesta Nacional de Estudiantes del Ministerio de Educación del Perú.",
   generator: "Ministerio de Educación",
   icons: {
-    icon: "/favicon2.ico",
-    shortcut: "/favicon2.ico",
-    apple: "/favicon2.png",
+    icon: [{ url: "/favicon2.ico", sizes: "32x32" }],
+    apple: { url: "/favicon2.ico", sizes: "180x180" },
   },
   applicationName: "Encuesta Nacional",
   keywords: ["Encuesta Nacional", "Ministerio de Educación", "Estudiantes", "Educación Perú", "Minedu"],
