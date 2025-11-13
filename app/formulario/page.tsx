@@ -110,8 +110,9 @@ export default function SurveyPage() {
       const stored = sessionStorage.getItem("surveyAccess")
       if (!stored) return
 
-      const { participationId } = JSON.parse(stored)
-      if (!participationId) return
+      const { participationId, surveyId } = JSON.parse(stored)
+
+      if (!participationId || !surveyId) return
 
       // Payload para la API
       const answersPayload = Object.entries(answers).map(([questionId, answerObj]) => ({
@@ -119,6 +120,7 @@ export default function SurveyPage() {
         question_id: Number(questionId),
         option_id: answerObj.optionId ?? null,
         value: answerObj.value ?? null,
+        survey_id: surveyId,
       }))
 
       if (answersPayload.length === 0) {
@@ -131,8 +133,6 @@ export default function SurveyPage() {
         answers: answersPayload,
       }
 
-
-      // ✅ Enviar las respuestas al backend
       const res = await fetch("/api/submit-survey", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

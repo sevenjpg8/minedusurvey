@@ -14,15 +14,16 @@ export async function POST(req: Request) {
 
     // Crear múltiples inserts (batch)
     const values = answers
-        .map((_, i) => `($${i * 5 + 1}, $${i * 5 + 2}, $${i * 5 + 3}, $${i * 5 + 4}, $${i * 5 + 5})`)
-        .join(",")
+    .map((_, i) => `($${i * 6 + 1}, $${i * 6 + 2}, $${i * 6 + 3}, $${i * 6 + 4}, $${i * 6 + 5}, $${i * 6 + 6})`)
+    .join(",")
 
     const params = answers.flatMap((a) => [
         a.survey_participation_id,
         a.question_id,
         Number(a.option_id),
         a.value ?? null,
-        now,
+        new Date().toISOString(),
+        a.survey_id,
     ])
 
     const query = `
@@ -31,7 +32,8 @@ export async function POST(req: Request) {
             question_id,
             option_id,
             value,
-            created_at
+            created_at,
+            survey_id
         )
         VALUES ${values};
     `
