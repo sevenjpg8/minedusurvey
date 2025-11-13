@@ -20,7 +20,7 @@ export default function SurveyPage() {
 
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [answers, setAnswers] = useState<Record<number, number>>({})
+  const [answers, setAnswers] = useState<Record<number, { optionId?: number; value?: string }>>({})
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [questionHistory, setQuestionHistory] = useState<number[]>([])
   const [timeLeft, setTimeLeft] = useState(300)
@@ -33,7 +33,6 @@ export default function SurveyPage() {
 
     const loadQuestions = async () => {
       try {
-        // ✅ Llamada a tu nueva API
         const res = await fetch(`/api/surveys?id=${surveyId}`)
         const questionsData = await res.json()
         setQuestions(questionsData)
@@ -58,9 +57,20 @@ export default function SurveyPage() {
   }
 
   const handleSelectAnswer = (optionId: number) => {
-    const questionId = questions[currentQuestion].id
+    const question = questions[currentQuestion]
+    const questionId = question.id
+    const selectedOption = question.options.find(o => o.id === optionId)
+
+    if (!selectedOption) return
+
     setSelectedAnswer(optionId)
-    setAnswers(prev => ({ ...prev, [questionId]: optionId }))
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: {
+        optionId,
+        value: selectedOption.text
+      }
+    }))
   }
 
   const handleNext = () => {
@@ -81,7 +91,7 @@ export default function SurveyPage() {
     if (nextIndex !== -1) {
       setQuestionHistory(prev => [...prev, currentQuestion])
       setCurrentQuestion(nextIndex)
-      setSelectedAnswer(answers[questions[nextIndex].id] ?? null)
+      setSelectedAnswer(answers[questions[nextIndex].id]?.optionId ?? null)
     }
   }
 
@@ -92,9 +102,8 @@ export default function SurveyPage() {
 
     setQuestionHistory(prev => prev.slice(0, -1)) // quitar la última
     setCurrentQuestion(previousIndex)
-    setSelectedAnswer(answers[questions[previousIndex].id] ?? null)
+    setSelectedAnswer(answers[questions[previousIndex].id]?.optionId ?? null)
   }
-
 
   const handleSubmit = async () => {
     try {
@@ -105,10 +114,11 @@ export default function SurveyPage() {
       if (!participationId) return
 
       // Payload para la API
-      const answersPayload = Object.entries(answers).map(([questionId, optionId]) => ({
+      const answersPayload = Object.entries(answers).map(([questionId, answerObj]) => ({
         survey_participation_id: participationId,
         question_id: Number(questionId),
-        option_id: optionId,
+        option_id: answerObj.optionId ?? null,
+        value: answerObj.value ?? null,
       }))
 
       if (answersPayload.length === 0) {
