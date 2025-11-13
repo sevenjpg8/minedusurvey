@@ -75,14 +75,15 @@ export default function SurveyPage() {
 
   const handleNext = () => {
     const question = questions[currentQuestion]
-    const selectedOptionId = answers[question.id]
-    if (!selectedOptionId) return
+    const storedAnswer = answers[question.id]
 
-    const selectedOption = question.options.find(o => o.id === selectedOptionId)
+    if (!storedAnswer || !storedAnswer.optionId) return
+
+    const selectedOption = question.options.find(o => o.id === storedAnswer.optionId)
 
     let nextIndex = -1
 
-    if (selectedOption?.next_question_id) {
+    if (selectedOption && selectedOption.next_question_id) {
       nextIndex = questions.findIndex(q => q.id === selectedOption.next_question_id)
     } else if (currentQuestion < questions.length - 1) {
       nextIndex = currentQuestion + 1
