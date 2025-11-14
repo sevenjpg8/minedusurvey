@@ -46,6 +46,7 @@
     "date-fns": "4.1.0",
     "dotenv": "^17.2.3",
     "embla-carousel-react": "latest",
+    "hcaptcha": "^0.2.0",
     "input-otp": "latest",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",

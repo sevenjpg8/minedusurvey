@@ -56,12 +56,21 @@ export default function SurveyForm() {
       .then(res => res.json())
       .then(data => setCsrfToken(data.csrfToken))
   }, [])
+  
+useEffect(() => {
+  const w = window as any;
+  if (w.hcaptcha) {
+    w.hcaptcha.render(document.querySelector(".h-captcha"));
+  }
+}, []);
+
 
   useEffect(() => {
-    (window as any).onTurnstileSuccess = function (token: string) {
-      setCaptchaToken(token)
-    }
-  }, [])
+    (window as any).onHCaptchaSuccess = function (token: string) {
+      setCaptchaToken(token);
+    };
+  }, []);
+
 
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -98,9 +107,9 @@ export default function SurveyForm() {
     try {
       const res = await fetch("/api/participacion", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "x-csrf-token": csrfToken 
+          "x-csrf-token": csrfToken
         },
         body: JSON.stringify({
           codMod: accessData?.codigoModular,
@@ -134,7 +143,7 @@ export default function SurveyForm() {
           participationId: data.id
         })
       )
-      
+
       router.push("/formulario")
     } catch (error) {
       console.error("Error al enviar datos:", error)
@@ -312,12 +321,11 @@ export default function SurveyForm() {
           </div>
 
           <div
-            className="cf-turnstile"
-            data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_LOCAL_SITEKEY}
-            data-callback="onTurnstileSuccess"
-            data-size="compact"
-            data-theme="light"
+            className="h-captcha"
+            data-sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
+            data-callback="onHCaptchaSuccess"
           ></div>
+
 
           {/* Submit Button */}
           <button

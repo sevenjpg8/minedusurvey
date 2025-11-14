@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: Request) {
   try {
-    const { codMod, level, grade, section, gender, captchaToken  } = await req.json();
+    const { codMod, level, grade, section, gender, captchaToken } = await req.json();
 
     if (!captchaToken) {
       return NextResponse.json(
@@ -15,22 +15,23 @@ export async function POST(req: Request) {
     }
 
     const verifyCaptcha = await fetch(
-      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      "https://hcaptcha.com/siteverify",
       {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `secret=${process.env.TURNSTILE_SECRET_KEY}&response=${captchaToken}`,
+        body: `secret=${process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}&response=${captchaToken}`,
       }
-    )
+    );
 
     const captchaResponse = await verifyCaptcha.json();
 
     if (!captchaResponse.success) {
       return NextResponse.json(
-        { error: "Captcha inválido. Inténtalo de nuevo." },
+        { error: "Captcha inválido. Inténtalo nuevamente." },
         { status: 400 }
       );
     }
+
 
 
     if (!codMod || !level || !grade || !section || !gender) {

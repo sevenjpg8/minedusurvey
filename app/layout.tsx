@@ -78,9 +78,13 @@ export default function RootLayout({
         <div className="flex-1">{children}</div>
         <Footer />
         <Script
-          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          src="https://js.hcaptcha.com/1/api.js"
           strategy="afterInteractive"
+ 
+          async
+          defer
         />
+
       </body>
     </html>
   )
