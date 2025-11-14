@@ -58,18 +58,6 @@ export default function SurveyForm() {
   }, [])
 
   useEffect(() => {
-    const script = document.createElement("script")
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js"
-    script.async = true
-    script.defer = true
-    document.body.appendChild(script)
-
-    return () => {
-      document.body.removeChild(script)
-    }
-  }, [])
-
-  useEffect(() => {
     (window as any).onTurnstileSuccess = function (token: string) {
       setCaptchaToken(token)
     }
@@ -86,26 +74,25 @@ export default function SurveyForm() {
     }))
   }
 
-  if (!captchaToken) {
-    setError("Completa el captcha antes de continuar.")
-    return
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-      if (!formData.grade) {
-        setError("Por favor, selecciona un grado")
-        return
-      }
-      if (!formData.section) {
-        setError("Por favor, selecciona una sección")
-        return
-      }
-      if (!formData.sex) {
-        setError("Por favor, selecciona tu sexo")
-        return
-      }
+    if (!captchaToken) {
+      setError("Completa el captcha antes de continuar.")
+      return
+    }
+    if (!formData.grade) {
+      setError("Por favor, selecciona un grado")
+      return
+    }
+    if (!formData.section) {
+      setError("Por favor, selecciona una sección")
+      return
+    }
+    if (!formData.sex) {
+      setError("Por favor, selecciona tu sexo")
+      return
+    }
 
     try {
       const res = await fetch("/api/participacion", {

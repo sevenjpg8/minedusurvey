@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import Footer from "@/components/footer"
 import "./globals.css"
+import Script from "next/script"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -75,6 +76,10 @@ export default function RootLayout({
       <body className={`font-sans antialiased flex flex-col min-h-screen`}>
         <div className="flex-1">{children}</div>
         <Footer />
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   )
