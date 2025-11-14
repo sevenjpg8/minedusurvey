@@ -16,6 +16,13 @@ interface AccessData {
   level: string
 }
 
+declare global {
+  interface Window {
+    hcaptcha?: any
+    onHCaptchaSuccess?: (token: string) => void
+  }
+}
+
 export default function SurveyForm() {
   const router = useRouter()
   const [csrfToken, setCsrfToken] = useState("")
@@ -58,19 +65,27 @@ export default function SurveyForm() {
   }, [])
   
 useEffect(() => {
-  const w = window as any;
-  if (w.hcaptcha) {
-    w.hcaptcha.render(document.querySelector(".h-captcha"));
+  window.onHCaptchaSuccess = (token: string) => {
+    setCaptchaToken(token)
   }
-}, []);
+}, [])
 
+useEffect(() => {
+  const interval = setInterval(() => {
+    if (window.hcaptcha) {
+      const container = document.querySelector(".h-captcha")
 
-  useEffect(() => {
-    (window as any).onHCaptchaSuccess = function (token: string) {
-      setCaptchaToken(token);
-    };
-  }, []);
+      // evitar render duplicado
+      if (container && !container.hasChildNodes()) {
+        window.hcaptcha.render(container)
+      }
 
+      clearInterval(interval)
+    }
+  }, 300)
+
+  return () => clearInterval(interval)
+}, [])
 
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
