@@ -335,11 +335,13 @@ useEffect(() => {
             </div>
           </div>
 
-          <div
-            className="h-captcha"
-            data-sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
-            data-callback="onHCaptchaSuccess"
-          ></div>
+<div className="w-full flex justify-center mt-4">
+  <div
+    className="h-captcha"
+    data-sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
+    data-callback="onHCaptchaSuccess"
+  ></div>
+</div>
 
 
           {/* Submit Button */}
