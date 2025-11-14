@@ -63,6 +63,7 @@ export default function SurveyForm() {
     }
   }, [])
 
+
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target
     if (["dre", "ugel", "institution", "level"].includes(name)) {
@@ -310,14 +311,13 @@ export default function SurveyForm() {
             </div>
           </div>
 
-          <div className="flex justify-center">
-            <div
-              className="cf-turnstile"
-              data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-              data-size="compact"
-              data-theme="light"
-            ></div>
-          </div>
+          <div
+            className="cf-turnstile"
+            data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_LOCAL_SITEKEY}
+            data-callback="onTurnstileSuccess"
+            data-size="compact"
+            data-theme="light"
+          ></div>
 
           {/* Submit Button */}
           <button
