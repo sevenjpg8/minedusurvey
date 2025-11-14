@@ -18,6 +18,7 @@ interface AccessData {
 
 export default function SurveyForm() {
   const router = useRouter()
+  const [csrfToken, setCsrfToken] = useState("")
   const [accessData, setAccessData] = useState<AccessData | null>(null)
   const [formData, setFormData] = useState({
     dre: "",
@@ -29,6 +30,8 @@ export default function SurveyForm() {
     sex: "",
   })
   const [error, setError] = useState("")
+  const [captchaToken, setCaptchaToken] = useState("")
+
 
   useEffect(() => {
     const data = sessionStorage.getItem("accessData")
@@ -48,6 +51,30 @@ export default function SurveyForm() {
     }))
   }, [router])
 
+  useEffect(() => {
+    fetch("/api/csrf")
+      .then(res => res.json())
+      .then(data => setCsrfToken(data.csrfToken))
+  }, [])
+
+  useEffect(() => {
+    const script = document.createElement("script")
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js"
+    script.async = true
+    script.defer = true
+    document.body.appendChild(script)
+
+    return () => {
+      document.body.removeChild(script)
+    }
+  }, [])
+
+  useEffect(() => {
+    (window as any).onTurnstileSuccess = function (token: string) {
+      setCaptchaToken(token)
+    }
+  }, [])
+
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target
     if (["dre", "ugel", "institution", "level"].includes(name)) {
@@ -59,76 +86,73 @@ export default function SurveyForm() {
     }))
   }
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
-
-  // 🔹 Validaciones de campos requeridos
-    if (!formData.grade) {
-      setError("Por favor, selecciona un grado")
-      return
-    }
-    if (!formData.section) {
-      setError("Por favor, selecciona una sección")
-      return
-    }
-    if (!formData.sex) {
-      setError("Por favor, selecciona tu sexo")
-      return
-    }
-
-  try {
-    const res = await fetch("/api/participacion", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        codMod: accessData?.codigoModular,
-        level: formData.level,
-        grade: formData.grade,
-        section: formData.section,
-        gender: formData.sex,
-      })
-    })
-
-    console.log({
-      schoolId: accessData?.schoolId,
-      level: formData.level,
-      grade: formData.grade,
-      section: formData.section,
-      gender: formData.sex,
-    })
-
-    const data = await res.json()
-    if (!res.ok) {
-      console.error(data.error)
-      alert(data.error)
-      return
-    }
-
-    // 🔹 Determinar el ID de encuesta según el nivel
-    let surveyId: number
-    if (formData.level.toLowerCase() === "primaria") {
-      surveyId = 1
-    } else {
-      surveyId = 2
-    }
-
-    // 🔹 Guardar datos en sessionStorage para usarlos en /formulario
-    sessionStorage.setItem(
-      "surveyAccess",
-      JSON.stringify({
-        schoolId: data.school_id,
-        surveyId: data.survey_id,
-        participationId: data.id // <-- Aquí es donde va
-      })
-    )
-    
-    //console.log("Participación guardada:", data)
-    router.push("/formulario")
-  } catch (error) {
-    console.error("Error al enviar datos:", error)
-    alert("Error al guardar la participación")
+  if (!captchaToken) {
+    setError("Completa el captcha antes de continuar.")
+    return
   }
-}
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+      if (!formData.grade) {
+        setError("Por favor, selecciona un grado")
+        return
+      }
+      if (!formData.section) {
+        setError("Por favor, selecciona una sección")
+        return
+      }
+      if (!formData.sex) {
+        setError("Por favor, selecciona tu sexo")
+        return
+      }
+
+    try {
+      const res = await fetch("/api/participacion", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken 
+        },
+        body: JSON.stringify({
+          codMod: accessData?.codigoModular,
+          level: formData.level,
+          grade: formData.grade,
+          section: formData.section,
+          gender: formData.sex,
+          captchaToken,
+        })
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        console.error(data.error)
+        alert(data.error)
+        return
+      }
+
+      let surveyId: number
+      if (formData.level.toLowerCase() === "primaria") {
+        surveyId = 1
+      } else {
+        surveyId = 2
+      }
+
+      sessionStorage.setItem(
+        "surveyAccess",
+        JSON.stringify({
+          schoolId: data.school_id,
+          surveyId: data.survey_id,
+          participationId: data.id
+        })
+      )
+      
+      router.push("/formulario")
+    } catch (error) {
+      console.error("Error al enviar datos:", error)
+      alert("Error al guardar la participación")
+    }
+  }
 
   if (!accessData) {
     return (
@@ -297,6 +321,15 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <option value="femenino">Femenino</option>
               </select>
             </div>
+          </div>
+
+          <div className="flex justify-center">
+            <div
+              className="cf-turnstile"
+              data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+              data-size="compact"
+              data-theme="light"
+            ></div>
           </div>
 
           {/* Submit Button */}

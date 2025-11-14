@@ -5,13 +5,38 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: Request) {
   try {
-    const { codMod, level, grade, section, gender } = await req.json();
+    const { codMod, level, grade, section, gender, captchaToken  } = await req.json();
+
+    if (!captchaToken) {
+      return NextResponse.json(
+        { error: "Falta el token del captcha" },
+        { status: 400 }
+      );
+    }
+
+    const verifyCaptcha = await fetch(
+      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `secret=${process.env.TURNSTILE_SECRET_KEY}&response=${captchaToken}`,
+      }
+    )
+
+    const captchaResponse = await verifyCaptcha.json();
+
+    if (!captchaResponse.success) {
+      return NextResponse.json(
+        { error: "Captcha inválido. Inténtalo de nuevo." },
+        { status: 400 }
+      );
+    }
+
 
     if (!codMod || !level || !grade || !section || !gender) {
       return NextResponse.json({ error: "Faltan datos requeridos" }, { status: 400 });
     }
 
-    // 1️⃣ Buscar el school_id real desde minedu.encuesta_acceso
     const relacionQuery = `
       SELECT school_id
       FROM minedu.encuesta_acceso
@@ -30,7 +55,6 @@ export async function POST(req: Request) {
 
     const realSchoolId = relacionResult.rows[0].school_id;
 
-    // 2️⃣ Determinar survey_id según el nivel educativo
     let surveyId: number;
     const nivel = level.trim().toLowerCase();
 
@@ -43,7 +67,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3️⃣ Crear nuevo registro
     const newId = uuidv4();
 
     const insertQuery = `
