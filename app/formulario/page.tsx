@@ -24,6 +24,8 @@ export default function SurveyPage() {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [questionHistory, setQuestionHistory] = useState<number[]>([])
   const [timeLeft, setTimeLeft] = useState(300)
+  const [csrfToken, setCsrfToken] = useState("")
+  const [csrfLoaded, setCsrfLoaded] = useState(false)
 
   useEffect(() => {
     const access = sessionStorage.getItem("surveyAccess")
@@ -72,6 +74,17 @@ export default function SurveyPage() {
       }
     }))
   }
+
+  useEffect(() => {
+    if (csrfLoaded) return
+
+    fetch("/api/csrf")
+      .then(res => res.json())
+      .then(data => {
+        setCsrfToken(data.csrfToken)
+        setCsrfLoaded(true)
+      })
+  }, [csrfLoaded])
 
   const handleNext = () => {
     const question = questions[currentQuestion]
@@ -136,7 +149,10 @@ export default function SurveyPage() {
 
       const res = await fetch("/api/submit-survey", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken 
+        },
         body: JSON.stringify(payload),
       })
 
