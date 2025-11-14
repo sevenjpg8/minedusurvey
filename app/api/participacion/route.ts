@@ -19,9 +19,10 @@ export async function POST(req: Request) {
       {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `secret=${process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}&response=${captchaToken}`,
+        body: `secret=${process.env.NEXT_PUBLIC_HACAPTCHA_SECRET_KEY}&response=${captchaToken}`,
       }
     );
+
 
     const captchaResponse = await verifyCaptcha.json();
 

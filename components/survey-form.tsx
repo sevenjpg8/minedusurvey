@@ -26,6 +26,7 @@ declare global {
 export default function SurveyForm() {
   const router = useRouter()
   const [csrfToken, setCsrfToken] = useState("")
+  const [csrfLoaded, setCsrfLoaded] = useState(false)
   const [accessData, setAccessData] = useState<AccessData | null>(null)
   const [formData, setFormData] = useState({
     dre: "",
@@ -59,16 +60,21 @@ export default function SurveyForm() {
   }, [router])
 
   useEffect(() => {
+    if (csrfLoaded) return
+
     fetch("/api/csrf")
       .then(res => res.json())
-      .then(data => setCsrfToken(data.csrfToken))
-  }, [])
+      .then(data => {
+        setCsrfToken(data.csrfToken)
+        setCsrfLoaded(true)
+      })
+  }, [csrfLoaded])
   
-useEffect(() => {
-  window.onHCaptchaSuccess = (token: string) => {
-    setCaptchaToken(token)
-  }
-}, [])
+  useEffect(() => {
+    window.onHCaptchaSuccess = (token: string) => {
+      setCaptchaToken(token)
+    }
+  }, [])
 
 useEffect(() => {
   const interval = setInterval(() => {
@@ -197,13 +203,6 @@ useEffect(() => {
           Por favor, completa los siguientes datos para continuar. Tu identidad{" "}
           <span className="text-amber-600 font-semibold">permanecerá anónima</span>.
         </p>
-
-        {/* ⚠️ Mensaje de error visual */}
-        {error && (
-          <Alert className="mb-6 border-red-200 bg-red-50">
-            <AlertDescription className="text-red-800">{error}</AlertDescription>
-          </Alert>
-        )}
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* DRE - DISABLED */}
@@ -341,7 +340,12 @@ useEffect(() => {
             data-callback="onHCaptchaSuccess"
           ></div>
 
-
+            {/* ⚠️ Mensaje de error visual */}
+            {error && (
+              <Alert className="mb-6 border-red-200 bg-red-50">
+                <AlertDescription className="text-red-800">{error}</AlertDescription>
+              </Alert>
+            )}
           {/* Submit Button */}
           <button
             type="submit"
