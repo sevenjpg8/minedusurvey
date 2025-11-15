@@ -7,33 +7,34 @@ export async function POST(req: Request) {
   try {
     const { codMod, level, grade, section, gender, captchaToken } = await req.json();
 
-    if (!captchaToken) {
-      return NextResponse.json(
-        { error: "Falta el token del captcha" },
-        { status: 400 }
-      );
-    }
+    const isCaptchaDisabled = process.env.DISABLE_HCAPTCHA === "true";
 
-    const verifyCaptcha = await fetch(
-      "https://hcaptcha.com/siteverify",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `secret=${process.env.NEXT_PUBLIC_HACAPTCHA_SECRET_KEY}&response=${captchaToken}`,
+    if (!isCaptchaDisabled) {
+      if (!captchaToken) {
+        return NextResponse.json(
+          { error: "Falta el token del captcha" },
+          { status: 400 }
+        );
       }
-    );
 
-
-    const captchaResponse = await verifyCaptcha.json();
-
-    if (!captchaResponse.success) {
-      return NextResponse.json(
-        { error: "Captcha inválido. Inténtalo nuevamente." },
-        { status: 400 }
+      const verifyCaptcha = await fetch(
+        "https://hcaptcha.com/siteverify",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `secret=${process.env.HCAPTCHA_SECRET_KEY}&response=${captchaToken}`,
+        }
       );
+
+      const captchaResponse = await verifyCaptcha.json();
+
+      if (!captchaResponse.success) {
+        return NextResponse.json(
+          { error: "Captcha inválido. Inténtalo nuevamente." },
+          { status: 400 }
+        );
+      }
     }
-
-
 
     if (!codMod || !level || !grade || !section || !gender) {
       return NextResponse.json({ error: "Faltan datos requeridos" }, { status: 400 });

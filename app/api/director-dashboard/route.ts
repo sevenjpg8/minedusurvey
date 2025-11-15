@@ -31,11 +31,11 @@ export async function POST(req: Request) {
 
     const participacionesResult = await dbQuery(
       `
-  SELECT education_level, grade, section, school_id, completed_at
-  FROM minedu.survey_participations
-  WHERE school_id = ANY($1)
-    AND completed_at IS NOT NULL;
-  `,
+        SELECT education_level, grade, section, school_id, completed_at
+        FROM minedu.survey_participations
+        WHERE school_id = ANY($1)
+          AND completed_at IS NOT NULL;
+      `,
       [schoolIds]
     );
 

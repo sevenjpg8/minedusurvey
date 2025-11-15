@@ -24,6 +24,8 @@ declare global {
 }
 
 export default function SurveyForm() {
+  const captchaDisabled = process.env.NEXT_PUBLIC_DISABLE_HCAPTCHA === "true";
+
   const router = useRouter()
   const [csrfToken, setCsrfToken] = useState("")
   const [csrfLoaded, setCsrfLoaded] = useState(false)
@@ -39,7 +41,6 @@ export default function SurveyForm() {
   })
   const [error, setError] = useState("")
   const [captchaToken, setCaptchaToken] = useState("")
-
 
   useEffect(() => {
     const data = sessionStorage.getItem("accessData")
@@ -76,22 +77,24 @@ export default function SurveyForm() {
     }
   }, [])
 
-useEffect(() => {
-  const interval = setInterval(() => {
-    if (window.hcaptcha) {
-      const container = document.querySelector(".h-captcha")
+  useEffect(() => {
+    if (captchaDisabled) return;
 
-      // evitar render duplicado
-      if (container && !container.hasChildNodes()) {
-        window.hcaptcha.render(container)
+    const interval = setInterval(() => {
+      if (window.hcaptcha) {
+        const container = document.querySelector(".h-captcha")
+
+        // evitar render duplicado
+        if (container && !container.hasChildNodes()) {
+          window.hcaptcha.render(container)
+        }
+
+        clearInterval(interval)
       }
+    }, 300)
 
-      clearInterval(interval)
-    }
-  }, 300)
-
-  return () => clearInterval(interval)
-}, [])
+    return () => clearInterval(interval)
+  }, [])
 
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -108,9 +111,9 @@ useEffect(() => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!captchaToken) {
+    if (!captchaDisabled && !captchaToken) {
       setError("Completa el captcha antes de continuar.")
-      return
+      return;
     }
     if (!formData.grade) {
       setError("Por favor, selecciona un grado")
@@ -334,20 +337,23 @@ useEffect(() => {
             </div>
           </div>
 
-<div className="w-full flex justify-center mt-4">
-  <div
-    className="h-captcha"
-    data-sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
-    data-callback="onHCaptchaSuccess"
-  ></div>
-</div>
+          {/*CAPTCHA*/}
+          {!captchaDisabled && (
+            <div className="w-full flex justify-center mt-4">
+              <div
+                className="h-captcha"
+                data-sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
+                data-callback="onHCaptchaSuccess"
+              ></div>
+            </div>
+          )}
 
-            {/* ⚠️ Mensaje de error visual */}
-            {error && (
-              <Alert className="mb-6 border-red-200 bg-red-50">
-                <AlertDescription className="text-red-800">{error}</AlertDescription>
-              </Alert>
-            )}
+          {/* ⚠️ Mensaje de error visual */}
+          {error && (
+            <Alert className="mb-6 border-red-200 bg-red-50">
+              <AlertDescription className="text-red-800">{error}</AlertDescription>
+            </Alert>
+          )}
           {/* Submit Button */}
           <button
             type="submit"
