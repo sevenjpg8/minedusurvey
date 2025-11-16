@@ -44,7 +44,10 @@ export default function SurveyForm() {
 
   const formatLevel = (lvl: string) => {
     if (!lvl) return "";
-    return lvl.toLowerCase() === "p" ? "Primaria" : "Secundaria";
+    const value = lvl.trim().toLowerCase();
+    if (value === "p") return "Primaria";
+    if (value === "s") return "Secundaria";
+    return lvl; // fallback
   };
 
   useEffect(() => {
@@ -190,11 +193,11 @@ export default function SurveyForm() {
     )
   }
 
-  // 🔹 Determinar los grados disponibles según el nivel
   const gradeOptions =
-    formData.level.toLowerCase() === "p"
+    accessData?.level.toLowerCase() === "p"
       ? ["4", "5", "6"]
-      : ["1", "2", "3", "4", "5"]
+      : ["1", "2", "3", "4", "5"];
+
 
   return (
     <Card className="w-full max-w-2xl bg-white shadow-lg">
