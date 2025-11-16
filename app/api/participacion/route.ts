@@ -61,9 +61,11 @@ export async function POST(req: Request) {
     let surveyId: number;
     const nivel = level.trim().toLowerCase();
 
-    if (nivel.includes("primaria")) surveyId = 1;
-    else if (nivel.includes("secundaria")) surveyId = 2;
-    else {
+    if (nivel === "p" || nivel.includes("primaria")) {
+      surveyId = 1;
+    } else if (nivel === "s" || nivel.includes("secundaria")) {
+      surveyId = 2;
+    } else {
       return NextResponse.json(
         { error: "Nivel educativo no reconocido" },
         { status: 400 }

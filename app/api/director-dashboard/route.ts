@@ -12,7 +12,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1️⃣ Obtener escuelas vinculadas al director
     const escuelasResult = await dbQuery(
       `
       SELECT school_id
@@ -21,7 +20,6 @@ export async function POST(req: Request) {
       `,
       [codigo_director]
     );
-
 
     const schoolIds = escuelasResult.rows.map((r) => r.school_id);
 
@@ -39,25 +37,22 @@ export async function POST(req: Request) {
       [schoolIds]
     );
 
-
     const participaciones = participacionesResult.rows;
 
     const schoolsDataResult = await dbQuery(
       `
-      SELECT id, ugel_id, nivel_educativo
-      FROM minedu.school_new
-      WHERE id = ANY($1);
+        SELECT id, ugel_id
+        FROM minedu.school_new
+        WHERE id = ANY($1);
       `,
       [schoolIds]
     );
 
     const schoolsData = schoolsDataResult.rows;
 
-    // Mapa school_id → ugel_id
     const schoolToUgel: Record<number, number> = {};
     schoolsData.forEach((s) => (schoolToUgel[s.id] = s.ugel_id));
 
-    // Obtener DRE por cada UGEL
     const ugelIds = [...new Set(schoolsData.map((s) => s.ugel_id))];
 
     const dresResult = await dbQuery(
@@ -77,6 +72,7 @@ export async function POST(req: Request) {
 
     participaciones.forEach((p) => {
       const ugelId = schoolToUgel[p.school_id];
+
       if (ugelId != null) {
         estudiantesPorUgel.set(ugelId, (estudiantesPorUgel.get(ugelId) || 0) + 1);
 
@@ -89,13 +85,12 @@ export async function POST(req: Request) {
 
     const totalColegiosPorUgel = schoolsData.length;
 
-    // 5️⃣ Totales generales estudiantes
-    const totalPrimaria = participaciones.filter((p) =>
-      p.education_level.toLowerCase().includes("primaria")
+    const totalPrimaria = participaciones.filter(
+      (p) => p.level?.toLowerCase() === "primaria"
     ).length;
 
-    const totalSecundaria = participaciones.filter((p) =>
-      p.education_level.toLowerCase().includes("secundaria")
+    const totalSecundaria = participaciones.filter(
+      (p) => p.level?.toLowerCase() === "secundaria"
     ).length;
 
     const totalSecciones = new Set(participaciones.map((p) => p.section)).size;
@@ -108,25 +103,31 @@ export async function POST(req: Request) {
       { nombre: "Nivel Secundaria", valor: totalSecundaria },
     ];
 
-    // 6️⃣ Clasificación de colegios
-    const soloPrimaria = schoolsData.filter(
-      (s) =>
-        s.nivel_educativo.toLowerCase().includes("primaria") &&
-        !s.nivel_educativo.toLowerCase().includes("secundaria")
-    ).length;
+    const nivelesPorEscuela: Record<number, { p: boolean; s: boolean }> = {};
 
-    const soloSecundaria = schoolsData.filter(
-      (s) =>
-        s.nivel_educativo.toLowerCase().includes("secundaria") &&
-        !s.nivel_educativo.toLowerCase().includes("primaria")
-    ).length;
+    participaciones.forEach((p) => {
+      const id = p.school_id;
+      const lvl = p.level?.toLowerCase();
 
-    const conAmbos = schoolsData.filter(
-      (s) =>
-        s.nivel_educativo.toLowerCase().includes("primaria") &&
-        s.nivel_educativo.toLowerCase().includes("secundaria")
-    ).length;
+      if (!nivelesPorEscuela[id]) {
+        nivelesPorEscuela[id] = { p: false, s: false };
+      }
 
+      if (lvl === "primaria") nivelesPorEscuela[id].p = true;
+      if (lvl === "secundaria") nivelesPorEscuela[id].s = true;
+    });
+
+    let soloPrimaria = 0;
+    let soloSecundaria = 0;
+    let conAmbos = 0;
+
+    Object.values(nivelesPorEscuela).forEach((n) => {
+      if (n.p && !n.s) soloPrimaria++;
+      else if (!n.p && n.s) soloSecundaria++;
+      else if (n.p && n.s) conAmbos++;
+    });
+
+    // 8️⃣ Total de colegios por DRE
     const colegiosPorDre = new Map<number, number>();
     schoolsData.forEach((s) => {
       const dreId = ugelToDre[s.ugel_id];
@@ -145,17 +146,18 @@ export async function POST(req: Request) {
       { nombre: "Colegios a nivel DRE", valor: totalColegiosPorDre },
     ];
 
+    // 9️⃣ Avance diario últimos 7 días
     const avanceDiarioResult = await dbQuery(
       `
-      SELECT
-        TO_CHAR(completed_at, 'TMDay') AS dia,
-        COUNT(*) AS cantidad
-      FROM minedu.survey_participations
-      WHERE school_id = ANY($1)
-        AND completed_at IS NOT NULL
-        AND completed_at >= NOW() - INTERVAL '7 days'
-      GROUP BY dia, EXTRACT(DOW FROM completed_at)
-      ORDER BY EXTRACT(DOW FROM completed_at);
+        SELECT
+          TO_CHAR(completed_at, 'TMDay') AS dia,
+          COUNT(*) AS cantidad
+        FROM minedu.survey_participations
+        WHERE school_id = ANY($1)
+          AND completed_at IS NOT NULL
+          AND completed_at >= NOW() - INTERVAL '7 days'
+        GROUP BY dia, EXTRACT(DOW FROM completed_at)
+        ORDER BY EXTRACT(DOW FROM completed_at);
       `,
       [schoolIds]
     );
@@ -170,7 +172,6 @@ export async function POST(req: Request) {
       "Domingo",
     ];
 
-    // Traducción de días ingles → español
     const traduccionDias: Record<string, string> = {
       monday: "Lunes",
       tuesday: "Martes",

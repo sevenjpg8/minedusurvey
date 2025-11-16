@@ -12,7 +12,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ 1. Buscar registro en minedu.encuesta_acceso
     const registroQuery = `
       SELECT 
         cod_mod,
@@ -49,18 +48,15 @@ export async function POST(req: Request) {
       );
     }
 
-
-    // ✅ 2. Obtener datos del colegio + ugel + dre
     const schoolQuery = `
       SELECT 
         s.id,
         s.name,
-        s.nivel_educativo,
         u.id AS ugel_id,
         u.name AS ugel_name,
         d.id AS dre_id,
         d.name AS dre_name
-      FROM minedu.school_new s
+      FROM minedu.school_new_old s
       LEFT JOIN minedu.ugel_new u ON u.id = s.ugel_id
       LEFT JOIN minedu.dres d ON d.id = u.dre_id
       WHERE s.id = $1
@@ -90,7 +86,7 @@ export async function POST(req: Request) {
         dre: schoolData.dre_name ?? "SIN DRE",
         ugel: schoolData.ugel_name ?? "SIN UGEL",
         institution: schoolData.name,
-        level: schoolData.nivel_educativo,
+        level: registro.education_level,
         token: registro.token,
       },
     });

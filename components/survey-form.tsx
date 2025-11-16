@@ -42,6 +42,11 @@ export default function SurveyForm() {
   const [error, setError] = useState("")
   const [captchaToken, setCaptchaToken] = useState("")
 
+  const formatLevel = (lvl: string) => {
+    if (!lvl) return "";
+    return lvl.toLowerCase() === "p" ? "Primaria" : "Secundaria";
+  };
+
   useEffect(() => {
     const data = sessionStorage.getItem("accessData")
     if (!data) {
@@ -56,7 +61,7 @@ export default function SurveyForm() {
       dre: parsed.dre,
       ugel: parsed.ugel,
       institution: parsed.institution,
-      level: parsed.level,
+      level: formatLevel(parsed.level),
     }))
   }, [router])
 
@@ -187,7 +192,7 @@ export default function SurveyForm() {
 
   // 🔹 Determinar los grados disponibles según el nivel
   const gradeOptions =
-    formData.level.toLowerCase() === "primaria"
+    formData.level.toLowerCase() === "p"
       ? ["4", "5", "6"]
       : ["1", "2", "3", "4", "5"]
 
@@ -266,7 +271,7 @@ export default function SurveyForm() {
                 disabled
                 className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 focus:outline-none cursor-not-allowed"
               >
-                <option value={formData.level}>{formData.level}</option>
+                <option value={formData.level}>{formatLevel(formData.level)}</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">Este campo se completa automáticamente</p>
             </div>
