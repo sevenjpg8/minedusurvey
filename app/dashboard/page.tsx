@@ -50,7 +50,13 @@ export default function DirectorDashboard() {
         <div className="bg-white shadow-lg rounded-2xl p-8 w-full">
 
           <h2 className="text-2xl font-semibold mb-2">
-            {accessData.institution} ({accessData.level})
+            {accessData.institution} -
+            ({accessData.level === "p"
+              ? "Primaria"
+              : accessData.level === "s"
+              ? "Secundaria"
+              : accessData.level}
+            )
           </h2>
 
           <p className="text-gray-600 mb-8 text-lg">

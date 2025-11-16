@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { dbQuery } from "@/app/config/connection";
 
+interface NivelesEscuela {
+  primaria: boolean;
+  secundaria: boolean;
+}
+
 export async function POST(req: Request) {
   try {
     const { codigo_director } = await req.json();
@@ -12,109 +17,97 @@ export async function POST(req: Request) {
       );
     }
 
-    const escuelasResult = await dbQuery(
+    // 1. Obtener los códigos modulares del director
+    const colegios = await dbQuery(
       `
-      SELECT school_id
+      SELECT DISTINCT cod_mod AS codigo_modular
       FROM minedu.encuesta_acceso
-      WHERE codigo_director = $1;
+      WHERE codigo_director = $1
       `,
       [codigo_director]
     );
 
-    const schoolIds = escuelasResult.rows.map((r) => r.school_id);
+    const codigos = colegios.rows.map((c) => c.codigo_modular);
 
-    if (!schoolIds.length) {
-      return NextResponse.json({ estudiantes: [], locales: [], avanceDiario: [] });
+    if (!codigos.length) {
+      return NextResponse.json({
+        estudiantes: [],
+        locales: [],
+        avanceDiario: [],
+      });
     }
 
+    // 2. Participaciones sin duplicados
     const participacionesResult = await dbQuery(
       `
-        SELECT education_level, grade, section, school_id, completed_at
-        FROM minedu.survey_participations
-        WHERE school_id = ANY($1)
-          AND completed_at IS NOT NULL;
+      SELECT
+        id,
+        school_id,
+        education_level,
+        grade,
+        section,
+        ugel_id,
+        dre_id,
+        codigo_modular,
+        codigo_estudiante,
+        completed_at
+      FROM minedu.survey_participations
+      WHERE codigo_modular = ANY($1)
+        AND completed_at IS NOT NULL;
       `,
-      [schoolIds]
+      [codigos]
     );
 
     const participaciones = participacionesResult.rows;
 
-    const schoolsDataResult = await dbQuery(
-      `
-        SELECT id, ugel_id
-        FROM minedu.school_new
-        WHERE id = ANY($1);
-      `,
-      [schoolIds]
+    // Total encuestas completadas
+    const totalCompletados = participaciones.length;
+
+    // Total estudiantes únicos por nivel educativo
+    const primariaEstudiantes = new Set(
+      participaciones
+        .filter(p => p.education_level?.toLowerCase() === "primaria")
+        .map(p => p.codigo_estudiante)
     );
 
-    const schoolsData = schoolsDataResult.rows;
-
-    const schoolToUgel: Record<number, number> = {};
-    schoolsData.forEach((s) => (schoolToUgel[s.id] = s.ugel_id));
-
-    const ugelIds = [...new Set(schoolsData.map((s) => s.ugel_id))];
-
-    const dresResult = await dbQuery(
-      `
-      SELECT id, dre_id
-      FROM minedu.ugel_new
-      WHERE id = ANY($1);
-      `,
-      [ugelIds]
+    const secundariaEstudiantes = new Set(
+      participaciones
+        .filter(p => p.education_level?.toLowerCase() === "secundaria")
+        .map(p => p.codigo_estudiante)
     );
 
-    const ugelToDre: Record<number, number> = {};
-    dresResult.rows.forEach((u) => (ugelToDre[u.id] = u.dre_id));
+    // Total de grados únicos
+    const totalGrados = new Set(
+      participaciones.map(p => p.grade?.trim()).filter(Boolean)
+    ).size;
 
-    const estudiantesPorUgel = new Map<number, number>();
-    const estudiantesPorDre = new Map<number, number>();
-
-    participaciones.forEach((p) => {
-      const ugelId = schoolToUgel[p.school_id];
-
-      if (ugelId != null) {
-        estudiantesPorUgel.set(ugelId, (estudiantesPorUgel.get(ugelId) || 0) + 1);
-
-        const dreId = ugelToDre[ugelId];
-        if (dreId != null) {
-          estudiantesPorDre.set(dreId, (estudiantesPorDre.get(dreId) || 0) + 1);
-        }
-      }
-    });
-
-    const totalColegiosPorUgel = schoolsData.length;
-
-    const totalPrimaria = participaciones.filter(
-      (p) => p.level?.toLowerCase() === "primaria"
-    ).length;
-
-    const totalSecundaria = participaciones.filter(
-      (p) => p.level?.toLowerCase() === "secundaria"
-    ).length;
-
-    const totalSecciones = new Set(participaciones.map((p) => p.section)).size;
-    const totalGrados = new Set(participaciones.map((p) => p.grade)).size;
+    // Total de secciones únicas
+    const totalSecciones = new Set(
+      participaciones.map(p => p.section?.trim()).filter(Boolean)
+    ).size;
 
     const estudiantes = [
-      { nombre: "Sección", valor: totalSecciones },
-      { nombre: "Grado", valor: totalGrados },
-      { nombre: "Nivel Primaria", valor: totalPrimaria },
-      { nombre: "Nivel Secundaria", valor: totalSecundaria },
+      { nombre: "Total completados", valor: totalCompletados },
+      { nombre: "Total primaria", valor: primariaEstudiantes.size },
+      { nombre: "Total secundaria", valor: secundariaEstudiantes.size },
+      { nombre: "Total grados", valor: totalGrados },
+      { nombre: "Total secciones", valor: totalSecciones },
     ];
 
-    const nivelesPorEscuela: Record<number, { p: boolean; s: boolean }> = {};
+
+    // 4. Clasificación de colegios
+    const nivelesPorEscuela: Record<string, NivelesEscuela> = {};
 
     participaciones.forEach((p) => {
-      const id = p.school_id;
-      const lvl = p.level?.toLowerCase();
+      const id = String(p.school_id);
+      const lvl = p.education_level?.toLowerCase();
 
       if (!nivelesPorEscuela[id]) {
-        nivelesPorEscuela[id] = { p: false, s: false };
+        nivelesPorEscuela[id] = { primaria: false, secundaria: false };
       }
 
-      if (lvl === "primaria") nivelesPorEscuela[id].p = true;
-      if (lvl === "secundaria") nivelesPorEscuela[id].s = true;
+      if (lvl === "primaria") nivelesPorEscuela[id].primaria = true;
+      if (lvl === "secundaria") nivelesPorEscuela[id].secundaria = true;
     });
 
     let soloPrimaria = 0;
@@ -122,44 +115,36 @@ export async function POST(req: Request) {
     let conAmbos = 0;
 
     Object.values(nivelesPorEscuela).forEach((n) => {
-      if (n.p && !n.s) soloPrimaria++;
-      else if (!n.p && n.s) soloSecundaria++;
-      else if (n.p && n.s) conAmbos++;
+      if (n.primaria && !n.secundaria) soloPrimaria++;
+      else if (!n.primaria && n.secundaria) soloSecundaria++;
+      else if (n.primaria && n.secundaria) conAmbos++;
     });
 
-    // 8️⃣ Total de colegios por DRE
-    const colegiosPorDre = new Map<number, number>();
-    schoolsData.forEach((s) => {
-      const dreId = ugelToDre[s.ugel_id];
-      if (dreId != null) {
-        colegiosPorDre.set(dreId, (colegiosPorDre.get(dreId) || 0) + 1);
-      }
-    });
-
-    const totalColegiosPorDre = [...colegiosPorDre.values()].reduce((a, b) => a + b, 0);
+    const totalColegiosUgel = new Set(participaciones.map((p) => p.school_id)).size;
+    const totalColegiosDre = new Set(participaciones.map((p) => p.dre_id).filter(Boolean)).size;
 
     const locales = [
       { nombre: "Solo primaria", valor: soloPrimaria },
       { nombre: "Solo secundaria", valor: soloSecundaria },
       { nombre: "Con primaria y secundaria", valor: conAmbos },
-      { nombre: "Colegios a nivel UGEL", valor: totalColegiosPorUgel },
-      { nombre: "Colegios a nivel DRE", valor: totalColegiosPorDre },
+      { nombre: "Colegios a nivel UGEL", valor: totalColegiosUgel },
+      { nombre: "Colegios a nivel DRE", valor: totalColegiosDre },
     ];
 
-    // 9️⃣ Avance diario últimos 7 días
+    // 5. Avance diario
     const avanceDiarioResult = await dbQuery(
       `
-        SELECT
-          TO_CHAR(completed_at, 'TMDay') AS dia,
-          COUNT(*) AS cantidad
-        FROM minedu.survey_participations
-        WHERE school_id = ANY($1)
-          AND completed_at IS NOT NULL
-          AND completed_at >= NOW() - INTERVAL '7 days'
-        GROUP BY dia, EXTRACT(DOW FROM completed_at)
-        ORDER BY EXTRACT(DOW FROM completed_at);
+      SELECT
+        TO_CHAR(completed_at, 'TMDay') AS dia,
+        COUNT(*) AS cantidad
+      FROM minedu.survey_participations
+      WHERE codigo_modular = ANY($1)
+        AND completed_at IS NOT NULL
+        AND completed_at >= NOW() - INTERVAL '7 days'
+      GROUP BY dia, EXTRACT(DOW FROM completed_at)
+      ORDER BY EXTRACT(DOW FROM completed_at);
       `,
-      [schoolIds]
+      [codigos]
     );
 
     const diasOrdenados = [
@@ -182,17 +167,18 @@ export async function POST(req: Request) {
       sunday: "Domingo",
     };
 
-    const conteosPorDia = diasOrdenados.map((dia) => {
+    const avanceDiario = diasOrdenados.map((dia) => {
       const encontrado = avanceDiarioResult.rows.find((r) => {
-        const diaEnEspañol = traduccionDias[r.dia.trim().toLowerCase()];
-        return diaEnEspañol === dia;
+        const esp = traduccionDias[r.dia.trim().toLowerCase()];
+        return esp === dia;
       });
+
       return { name: dia, valor: encontrado ? Number(encontrado.cantidad) : 0 };
     });
 
-    return NextResponse.json({ estudiantes, locales, avanceDiario: conteosPorDia });
-  } catch (err: any) {
+    return NextResponse.json({ estudiantes, locales, avanceDiario });
+  } catch (err) {
     console.error("❌ Error en dashboard:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }

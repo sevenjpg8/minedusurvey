@@ -11,6 +11,14 @@ interface Props {
   codigoDirector: string
 }
 
+interface EstudiantesData {
+  totalCompletados: number
+  primaria: number
+  secundaria: number
+  grados: number
+  secciones: number
+}
+
 interface Dato {
   nombre: string
   valor: number
@@ -27,7 +35,7 @@ const dailyData = [
 ]
 
 export default function StatsGrid({ codigoDirector }: Props) {
-  const [estudiantes, setEstudiantes] = useState<Dato[]>([])
+  const [estudiantes, setEstudiantes] = useState<EstudiantesData | null>(null)
   const [avanceDiario, setAvanceDiario] = useState<Dato[]>([])
   const [locales, setLocales] = useState<Dato[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,7 +50,17 @@ export default function StatsGrid({ codigoDirector }: Props) {
           body: JSON.stringify({ codigo_director: codigoDirector }),
         })
         const data = await res.json()
-        setEstudiantes(data.estudiantes || [])
+
+        console.log("Datos recibidos del API:", data)
+
+        setEstudiantes({
+          totalCompletados: data.estudiantes?.find((x: Dato) => x.nombre === "Total completados")?.valor ?? 0,
+          primaria: data.estudiantes?.find((x: Dato) => x.nombre === "Total primaria")?.valor ?? 0,
+          secundaria: data.estudiantes?.find((x: Dato) => x.nombre === "Total secundaria")?.valor ?? 0,
+          grados: data.estudiantes?.find((x: Dato) => x.nombre === "Total grados")?.valor ?? 0,
+          secciones: data.estudiantes?.find((x: Dato) => x.nombre === "Total secciones")?.valor ?? 0,
+        })
+
         setLocales(data.locales || [])
         setAvanceDiario(data.avanceDiario || [])
       } catch (err) {
@@ -64,7 +82,13 @@ export default function StatsGrid({ codigoDirector }: Props) {
       </div>
     )
 
-  const totalEstudiantes = estudiantes.reduce((sum, e) => sum + e.valor, 0)
+  const rows = [
+    { nombre: "Total encuestas completadas", valor: estudiantes?.totalCompletados ?? 0 },
+    { nombre: "Total primaria", valor: estudiantes?.primaria ?? 0 },
+    { nombre: "Total secundaria", valor: estudiantes?.secundaria ?? 0 },
+    { nombre: "Total grados", valor: estudiantes?.grados ?? 0 },
+    { nombre: "Total secciones", valor: estudiantes?.secciones ?? 0 },
+  ]
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50">
@@ -81,11 +105,8 @@ export default function StatsGrid({ codigoDirector }: Props) {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Data displayed one above the other */}
         <div className="grid grid-cols-1 gap-8">
-          {/* Gráfico de Avance Diario - Now First */}
           <Card className="border-2 border-gray-200 shadow-lg">
             <CardHeader className="border-b-2 border-gray-100 pb-4 bg-gradient-to-r from-gray-50 to-green-50">
               <div className="flex items-center gap-3">
@@ -110,7 +131,7 @@ export default function StatsGrid({ codigoDirector }: Props) {
                     </tr>
                   </thead>
                   <tbody>
-                    {estudiantes.map((e, i) => (
+                    {rows.map((e, i) => (
                       <tr key={i} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                         <td className="py-3 px-4 text-gray-600 font-medium">{String(i + 1).padStart(2, "0")}</td>
                         <td className="py-3 px-4 text-gray-900">{e.nombre}</td>
@@ -127,7 +148,6 @@ export default function StatsGrid({ codigoDirector }: Props) {
             </CardContent>
           </Card>
 
-          {/* Students Table */}
           <Card className="border-2 border-blue-200 shadow-lg">
             <CardHeader className="border-b-2 border-blue-100 pb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
               <div className="flex items-center gap-3">
@@ -155,7 +175,6 @@ export default function StatsGrid({ codigoDirector }: Props) {
             </CardContent>
           </Card>
 
-          {/* Incidencias Table */}
           <div className="flex justify-center pt-6">
             <Button
               onClick={() => setIsIncidentsModalOpen(true)}
@@ -164,7 +183,6 @@ export default function StatsGrid({ codigoDirector }: Props) {
               🚨 Reportar Incidencia
             </Button>
           </div>
-
         </div>
       </div>
 
