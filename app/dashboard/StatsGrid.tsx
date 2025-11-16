@@ -91,7 +91,7 @@ export default function StatsGrid({ codigoDirector }: Props) {
   ]
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50">
+    <main className="min-h-screen bg-linear-to-b from-blue-50 to-indigo-50">
       <div
         className="border-b-2 border-blue-200 sticky top-0 z-50 shadow-lg"
         style={{ backgroundColor: "rgb(0, 51, 102)" }}
@@ -108,7 +108,7 @@ export default function StatsGrid({ codigoDirector }: Props) {
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8">
           <Card className="border-2 border-gray-200 shadow-lg">
-            <CardHeader className="border-b-2 border-gray-100 pb-4 bg-gradient-to-r from-gray-50 to-green-50">
+            <CardHeader className="border-b-2 border-gray-100 pb-4 bg-linear-to-r from-gray-50 to-green-50">
               <div className="flex items-center gap-3">
                 <div className="w-1 h-6 bg-gray-600 rounded-full" />
                 <CardTitle className="text-gray-900 text-xl">I. Estudiantes Participantes</CardTitle>
@@ -149,7 +149,7 @@ export default function StatsGrid({ codigoDirector }: Props) {
           </Card>
 
           <Card className="border-2 border-blue-200 shadow-lg">
-            <CardHeader className="border-b-2 border-blue-100 pb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardHeader className="border-b-2 border-blue-100 pb-4 bg-linear-to-r from-blue-50 to-indigo-50">
               <div className="flex items-center gap-3">
                 <div className="w-1 h-6 bg-blue-600 rounded-full" />
                 <CardTitle className="text-gray-900 text-xl">II. Avance Diario de Encuestas</CardTitle>
