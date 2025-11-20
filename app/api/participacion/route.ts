@@ -41,9 +41,16 @@ export async function POST(req: Request) {
     }
 
     const relacionQuery = `
-      SELECT school_id
-      FROM minedu.encuesta_acceso
-      WHERE cod_mod = $1
+      SELECT 
+        ea.id AS encuesta_acceso_id,
+        ea.school_id,
+        ea.codigo_estudiante,
+        ea.cod_mod,
+        s.ugel_id,
+        s.dre_id
+      FROM minedu.encuesta_acceso ea
+      LEFT JOIN minedu.school_new s ON s.id = ea.school_id
+      WHERE ea.cod_mod = $1
       LIMIT 1;
     `;
 
@@ -56,7 +63,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const realSchoolId = relacionResult.rows[0].school_id;
+    const {
+      encuesta_acceso_id,
+      school_id: realSchoolId,
+      codigo_estudiante,
+      cod_mod,
+      ugel_id,
+      dre_id
+    } = relacionResult.rows[0];
 
     let surveyId: number;
     const nivel = level.trim().toLowerCase();
@@ -77,19 +91,29 @@ export async function POST(req: Request) {
     const insertQuery = `
       INSERT INTO minedu.survey_participations (
         id, survey_id, school_id, education_level, grade, section, gender,
-        started_at, created_at, updated_at
+        started_at, created_at, updated_at,
+        encuesta_acceso_id, ugel_id, dre_id, codigo_modular, codigo_estudiante
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW(), NOW());
+      VALUES (
+        $1, $2, $3, $4, $5, $6, $7,
+        NOW(), NOW(), NOW(),
+        $8, $9, $10, $11, $12
+      );
     `;
 
     await dbQuery(insertQuery, [
       newId,
       surveyId,
       realSchoolId,
-      level,
+      level.toLowerCase(),
       grade,
       section,
       gender,
+      encuesta_acceso_id,
+      ugel_id,
+      dre_id,
+      cod_mod,
+      codigo_estudiante
     ]);
 
     return NextResponse.json(
