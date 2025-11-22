@@ -160,13 +160,6 @@ export default function SurveyForm() {
         return
       }
 
-      let surveyId: number
-      if (formData.level.toLowerCase() === "primaria") {
-        surveyId = 1
-      } else {
-        surveyId = 2
-      }
-
       sessionStorage.setItem(
         "surveyAccess",
         JSON.stringify({
@@ -194,7 +187,7 @@ export default function SurveyForm() {
   }
 
   const gradeOptions =
-    accessData?.level.toLowerCase() === "p"
+    accessData?.level.toLowerCase() === "primaria"
       ? ["4", "5", "6"]
       : ["1", "2", "3", "4", "5"];
 

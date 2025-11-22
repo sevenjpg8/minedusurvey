@@ -72,19 +72,34 @@ export async function POST(req: Request) {
       dre_id
     } = relacionResult.rows[0];
 
-    let surveyId: number;
-    const nivel = level.trim().toLowerCase();
+    const normalizedLevel = level.trim().toLowerCase();
 
-    if (nivel === "p" || nivel.includes("primaria")) {
-      surveyId = 1;
-    } else if (nivel === "s" || nivel.includes("secundaria")) {
-      surveyId = 2;
-    } else {
+    if (normalizedLevel !== "primaria" && normalizedLevel !== "secundaria") {
       return NextResponse.json(
         { error: "Nivel educativo no reconocido" },
         { status: 400 }
       );
     }
+
+    // Buscar encuesta activa por nivel educativo
+    const activeSurveyQuery = `
+      SELECT id
+      FROM minedu.surveys
+      WHERE is_active = true
+        AND LOWER(level) = $1
+      LIMIT 1;
+    `;
+
+    const activeSurveyResult = await dbQuery(activeSurveyQuery, [normalizedLevel]);
+
+    if (activeSurveyResult.rows.length === 0) {
+      return NextResponse.json(
+        { error: "No hay una encuesta activa para este nivel educativo" },
+        { status: 400 }
+      );
+    }
+
+    const surveyId = activeSurveyResult.rows[0].id;
 
     const newId = uuidv4();
 
