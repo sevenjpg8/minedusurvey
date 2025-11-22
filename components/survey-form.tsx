@@ -45,8 +45,8 @@ export default function SurveyForm() {
   const formatLevel = (lvl: string) => {
     if (!lvl) return "";
     const value = lvl.trim().toLowerCase();
-    if (value === "p") return "Primaria";
-    if (value === "s") return "Secundaria";
+    if (value === "primaria") return "Primaria";
+    if (value === "secundaria") return "Secundaria";
     return lvl; // fallback
   };
 
